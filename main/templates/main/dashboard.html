@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - CV Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+        
+        .navbar {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-brand {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .nav-menu a {
+            color: #333;
+            text-decoration: none;
+        }
+        
+        .nav-menu a:hover {
+            color: #667eea;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .welcome-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn:hover {
+            background: #5a67d8;
+        }
+        
+        .cv-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .cv-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .cv-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+        
+        .cv-card .title {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .cv-card .email {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .cv-card .date {
+            color: #999;
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .cv-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .cv-actions button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .btn-edit {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-pdf {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            background: white;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">📄 CV Generator</div>
+        <div class="nav-menu">
+            <span>Welcome, {{ user.username }}!</span>
+            <a href="{% url 'home' %}">Create CV</a>
+            <a href="{% url 'logout' %}">Logout</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="welcome-card">
+            <h1>Welcome to Your Dashboard, {{ user.username }}! 👋</h1>
+            <p>Manage your CVs or create a new one.</p>
+            <a href="{% url 'home' %}" class="btn">+ Create New CV</a>
+        </div>
+        
+        <h2>Your CVs ({{ cvs|length }})</h2>
+        
+        {% if cvs %}
+            <div class="cv-grid">
+                {% for cv in cvs %}
+                    <div class="cv-card" data-cv-id="{{ cv.id }}">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>{{ cv.full_name }}</h3>
+                        <span style="font-size: 20px;" title="{{ cv.get_template_display }}">
+                            {% if cv.template == 'modern' %}✨
+                            {% elif cv.template == 'classic' %}📋
+                            {% elif cv.template == 'creative' %}🎨
+                            {% elif cv.template == 'minimal' %}⚡
+                            {% endif %}
+                        </span>
+                        </div>
+                        <h3>{{ cv.full_name }}</h3>
+                        <div class="title">{{ cv.professional_title|default:"Professional" }}</div>
+                        <div class="email">{{ cv.email }}</div>
+                        <div class="date">Created: {{ cv.created_at|date:"F j, Y" }}</div>
+                        <div class="cv-actions">
+                            <button class="btn-edit edit-cv">✏️ Edit</button>
+                            <button class="btn-pdf download-pdf">📄 PDF</button>
+                            <button class="btn-delete delete-cv">🗑️ Delete</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>You haven't created any CVs yet.</p>
+                <a href="{% url 'home' %}" class="btn">Create Your First CV</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        (function() {
+            // ==================== INITIALIZATION ====================
+            document.addEventListener('DOMContentLoaded', function() {
+                // Add event listeners to all edit buttons
+                document.querySelectorAll('.edit-cv').forEach(button => {
+                    button.addEventListener('click', function(e) {
+                        const cvCard = e.target.closest('.cv-card');
+                        const cvId = cvCard.dataset.cvId;
+                        window.location.href = '/?edit=' + cvId;
+                    });
+                });
+                
+                // Add event listeners to all PDF buttons
+                document.querySelectorAll('.download-pdf').forEach(button => {
+                    button.addEventListener('click', function(e) {
+                        const cvCard = e.target.closest('.cv-card');
+                        const cvId = cvCard.dataset.cvId;
+                        downloadPDF(cvId);
+                    });
+                });
+                
+                // Add event listeners to all delete buttons
+                document.querySelectorAll('.delete-cv').forEach(button => {
+                    button.addEventListener('click', function(e) {
+                        const cvCard = e.target.closest('.cv-card');
+                        const cvId = cvCard.dataset.cvId;
+                        deleteCV(cvId);
+                    });
+                });
+            });
+            
+            // ==================== DELETE CV FUNCTION ====================
+            function deleteCV(cvId) {
+                if (confirm('Are you sure you want to delete this CV?')) {
+                    fetch(`/api/delete-cv/${cvId}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken')
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Remove the CV card from the page
+                            const cvCard = document.querySelector(`[data-cv-id="${cvId}"]`);
+                            if (cvCard) {
+                                cvCard.remove();
+                            }
+                            
+                            // Update the count
+                            updateCVCount();
+                            
+                            // Show success message
+                            showNotification('CV deleted successfully!');
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error: ' + error);
+                    });
+                }
+            }
+            
+            // ==================== DOWNLOAD PDF FUNCTION ====================
+            function downloadPDF(cvId) {
+                window.location.href = `/api/download-pdf/${cvId}/`;
+            }
+            
+            // ==================== UPDATE CV COUNT ====================
+            function updateCVCount() {
+                const cvCount = document.querySelectorAll('.cv-card').length;
+                const countElement = document.querySelector('h2');
+                if (countElement) {
+                    countElement.textContent = `Your CVs (${cvCount})`;
+                }
+                
+                // Show empty state if no CVs
+                if (cvCount === 0) {
+                    const container = document.querySelector('.container');
+                    const cvGrid = document.querySelector('.cv-grid');
+                    if (cvGrid) {
+                        cvGrid.remove();
+                        
+                        const emptyState = document.createElement('div');
+                        emptyState.className = 'empty-state';
+                        emptyState.innerHTML = `
+                            <p>You haven't created any CVs yet.</p>
+                            <a href="/" class="btn">Create Your First CV</a>
+                        `;
+                        container.appendChild(emptyState);
+                    }
+                }
+            }
+            
+            // ==================== NOTIFICATION FUNCTION ====================
+            function showNotification(message) {
+                // Create notification element if it doesn't exist
+                let notification = document.getElementById('notification');
+                if (!notification) {
+                    notification = document.createElement('div');
+                    notification.id = 'notification';
+                    notification.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        padding: 15px;
+                        background: #28a745;
+                        color: white;
+                        border-radius: 4px;
+                        z-index: 1000;
+                        display: none;
+                    `;
+                    document.body.appendChild(notification);
+                }
+                
+                notification.textContent = message;
+                notification.style.display = 'block';
+                
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 3000);
+            }
+            
+            // ==================== GET COOKIE FUNCTION ====================
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+        })();
+    </script>
+</body>
+</html>
