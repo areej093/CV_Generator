@@ -5,6 +5,7 @@ from django.core import serializers
 from django.contrib import messages
 import json
 from django.contrib.auth.models import User
+from django.db.models import Q
 from .models import CV, Experience, Education, Skill, JobOffer, Application, Company, TrainingCourse, Notification, CourseAccomplishment, Badge, Message
 from nlp_engine.services import match_cv_to_job, analyze_cv
 from django.core.mail import send_mail
@@ -27,7 +28,33 @@ from io import BytesIO
 import base64
 
 
-def home(request):
+def get_conversations(user):
+    # Get all messages where user is sender or receiver
+    all_msgs = Message.objects.filter(Q(sender=user) | Q(receiver=user)).order_by('-created_at')
+    
+    conversations = {}
+    for msg in all_msgs:
+        other_user = msg.receiver if msg.sender == user else msg.sender
+        if other_user.id not in conversations:
+            conversations[other_user.id] = {
+                'user': other_user,
+                'last_message': msg,
+                'unread_count': 0,
+                'messages': []
+            }
+        conversations[other_user.id]['messages'].append(msg)
+        if msg.receiver == user and not msg.is_read:
+            conversations[other_user.id]['unread_count'] += 1
+            
+    return list(conversations.values())
+
+def root_redirect(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    return redirect('cv_dashboard')
+
+@login_required
+def cv_builder(request):
     template = request.GET.get('template', 'modern')
     return render(request, 'main/home.html', {'selected_template': template})
 
@@ -41,20 +68,27 @@ def dashboard(request):
         company, _ = Company.objects.get_or_create(user=request.user, defaults={'name': f"{request.user.username}'s Company"})
         jobs = JobOffer.objects.filter(company=company)
         verification_requests = CourseAccomplishment.objects.filter(course__company=company, status='pending')
+        notifications = Notification.objects.filter(user=request.user, is_read=False).order_by('-created_at')
+        conversations = get_conversations(request.user)
         return render(request, 'main/company_dashboard.html', {
             'company': company,
             'jobs': jobs,
-            'verification_requests': verification_requests
+            'verification_requests': verification_requests,
+            'notifications': notifications,
+            'conversations': conversations
         })
 
     # Get all CVs for the logged-in user
     user_cvs = CV.objects.filter(user=request.user)
     
-    # Get notifications
-    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')[:5]
+    # Get unread notifications
+    notifications = Notification.objects.filter(user=request.user, is_read=False).order_by('-created_at')
     
     # Get job applications
     applications = Application.objects.filter(cv__user=request.user).order_by('-applied_at')
+    
+    # Get conversations
+    conversations = get_conversations(request.user)
     
     # Convert CVs to JSON
     cvs_data = []
@@ -91,7 +125,8 @@ def dashboard(request):
         'cvs_json': json.dumps(cvs_data),
         'notifications': notifications,
         'applications': applications,
-        'recommended_trainings': recommended_trainings
+        'recommended_trainings': recommended_trainings,
+        'conversations': conversations
     })
 
 @login_required
@@ -1446,8 +1481,22 @@ def update_application_status(request, app_id):
                     html_message=html_message,
                     fail_silently=False,
                 )
+                
+                # ALSO CREATE IN-APP NOTIFICATION
+                Notification.objects.create(
+                    user=application.cv.user,
+                    title=f"Application Update: {application.job_offer.title}",
+                    message=f"Your application for {application.job_offer.title} has been updated to {application.get_status_display()}."
+                )
+                
                 messages.success(request, f'Status updated to {application.get_status_display()} and HTML email sent to candidate.')
             except Exception as e:
+                # Still create notification even if email fails
+                Notification.objects.create(
+                    user=application.cv.user,
+                    title=f"Application Update: {application.job_offer.title}",
+                    message=f"Your application for {application.job_offer.title} has been updated to {application.get_status_display()}."
+                )
                 messages.warning(request, f'Status updated to {application.get_status_display()}, but email could not be sent. Error: {str(e)}')
                 
     return redirect('view_applications', job_id=application.job_offer.id)
@@ -1474,6 +1523,14 @@ def apply_to_job(request, job_id):
             messages.warning(request, 'You have already applied to this job with this CV.')
         else:
             Application.objects.create(job_offer=job, cv=cv)
+            
+            # Notify Recruiter
+            Notification.objects.create(
+                user=job.company.user,
+                title="New Job Application",
+                message=f"{cv.full_name} has applied for {job.title}."
+            )
+            
             messages.success(request, f'Successfully applied to {job.title}!')
             
         return redirect('browse_jobs')
@@ -1606,3 +1663,28 @@ def review_accomplishment(request, accomplishment_id):
             messages.warning(request, "Accomplishment rejected.")
             
     return redirect('cv_dashboard')
+
+@login_required
+def mark_notification_read(request, notification_id):
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notification.is_read = True
+    notification.save()
+    return JsonResponse({'success': True})
+
+@login_required
+def mark_all_notifications_read(request):
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    return redirect('cv_dashboard')
+
+@login_required
+def mark_message_read(request, message_id):
+    message = get_object_or_404(Message, id=message_id, receiver=request.user)
+    message.is_read = True
+    message.save()
+    return JsonResponse({'success': True})
+
+@login_required
+def mark_conv_read(request, user_id):
+    other_user = get_object_or_404(User, id=user_id)
+    Message.objects.filter(sender=other_user, receiver=request.user, is_read=False).update(is_read=True)
+    return JsonResponse({'success': True})

@@ -118,7 +118,7 @@
                         <button type="submit" class="btn-submit">Send Application</button>
                     {% else %}
                         <p style="color: #ef4444;">You need to create a CV before you can apply.</p>
-                        <a href="{% url 'home' %}" style="color: #667eea; font-weight: 600;">Create a CV now →</a>
+                        <a href="{% url 'cv_builder' %}" style="color: #667eea; font-weight: 600;">Create a CV now →</a>
                         <button type="button" disabled class="btn-submit">Send Application</button>
                     {% endif %}
                 </form>

@@ -8,7 +8,8 @@ router.register(r'cv', api_views.CVViewSet, basename='cv')
 
 urlpatterns = [
     # Legacy Views (Kept for PDF and web interface)
-    path('', views.home, name='home'),
+    path('', views.root_redirect, name='home'),
+    path('builder/', views.cv_builder, name='cv_builder'),
     path('dashboard/', views.dashboard, name='cv_dashboard'),
     path('templates/', views.template_selector, name='template_selector'),
     path('api/download-pdf/<int:cv_id>/', views.download_pdf, name='download_pdf'),
@@ -39,6 +40,12 @@ urlpatterns = [
     path('send-message/<int:receiver_id>/', views.send_message, name='send_message'),
     path('submit-accomplishment/<int:course_id>/', views.submit_accomplishment, name='submit_accomplishment'),
     path('review-accomplishment/<int:accomplishment_id>/', views.review_accomplishment, name='review_accomplishment'),
+    
+    # Notifications
+    path('notifications/read/<int:notification_id>/', views.mark_notification_read, name='mark_notification_read'),
+    path('notifications/read-all/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
+    path('messages/read/<int:message_id>/', views.mark_message_read, name='mark_message_read'),
+    path('messages/read-conv/<int:user_id>/', views.mark_conv_read, name='mark_conv_read'),
     
     # DRF API Endpoints
     path('api/v1/', include(router.urls)),

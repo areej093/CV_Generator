@@ -156,6 +156,18 @@
         </aside>
 
         <main class="main-content">
+            <!-- Display Django Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div style="padding: 15px; border-radius: 12px; margin-bottom: 25px; text-align: center; font-weight: 600;
+                        {% if message.tags == 'error' %} background: #fee2e2; color: #991b1b; border: 1px solid #f87171;
+                        {% elif message.tags == 'success' %} background: #dcfce7; color: #166534; border: 1px solid #4ade80;
+                        {% else %} background: #fef9c3; color: #854d0e; border: 1px solid #facc15; {% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
             <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 50px;">
                 <div>
                     <h1 style="font-size: 32px; margin-bottom: 8px;">Welcome back, {{ user.first_name|default:user.username }}!</h1>
@@ -238,7 +250,80 @@
 
         <aside class="right-sidebar">
             <div class="ia-badge">🤖 IA INSIGHTS</div>
-            <h3 style="margin: 0 0 20px; font-size: 18px;">Company Profile</h3>
+
+            {% if notifications %}
+            <div class="profile-card" style="border-left: 4px solid #6366f1; background: #fdf2f8;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h5 style="margin: 0; font-size: 12px; color: #6366f1; text-transform: uppercase;">🔔 Notifications</h5>
+                    <a href="{% url 'mark_all_notifications_read' %}" style="font-size: 10px; color: #6366f1; text-decoration: none;">Clear all</a>
+                </div>
+                {% for note in notifications %}
+                <div id="note-{{ note.id }}" style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; position: relative;">
+                    <div style="font-size: 13px; font-weight: 700; color: #1e293b;">{{ note.title }}</div>
+                    <div style="font-size: 12px; color: #64748b; line-height: 1.4;">{{ note.message }}</div>
+                    <button onclick="markRead({{ note.id }})" style="position: absolute; top: 5px; right: 0; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if conversations %}
+            <div class="profile-card" style="border-left: 4px solid #10b981; background: #f0fdf4;">
+                <h5 style="margin: 0 0 10px; font-size: 12px; color: #10b981; text-transform: uppercase;">💬 Conversations</h5>
+                {% for conv in conversations %}
+                <div style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; cursor: pointer;" onclick="toggleChat({{ conv.user.id }})">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                        <span style="font-weight: 800; color: #065f46;">
+                            {{ conv.user.first_name|default:conv.user.username }}
+                            {% if conv.unread_count > 0 %}
+                            <span style="background: #ef4444; color: white; border-radius: 10px; padding: 1px 6px; font-size: 9px; margin-left: 5px;">{{ conv.unread_count }}</span>
+                            {% endif %}
+                        </span>
+                        <span style="color: #94a3b8;">{{ conv.last_message.created_at|date:"M d" }}</span>
+                    </div>
+                    <p style="font-size: 12px; color: #475569; margin: 0; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        {% if conv.last_message.sender == user %}You: {% endif %}{{ conv.last_message.content }}
+                    </p>
+                </div>
+
+                <!-- Chat History (Hidden) -->
+                <div id="chat-{{ conv.user.id }}" style="display:none; background: white; padding: 10px; border-radius: 8px; margin: 5px 0 15px; border: 1px solid #e2e8f0;">
+                    <div style="max-height: 150px; overflow-y: auto; margin-bottom: 10px; display: flex; flex-direction: column-reverse;">
+                        {% for msg in conv.messages %}
+                        <div style="margin-bottom: 8px; max-width: 90%; {% if msg.sender == user %}align-self: flex-end; text-align: right;{% else %}align-self: flex-start;{% endif %}">
+                            <div style="display: inline-block; padding: 6px 10px; border-radius: 10px; font-size: 11px; {% if msg.sender == user %}background: #6366f1; color: white;{% else %}background: #f1f5f9; color: #1e293b;{% endif %}">
+                                {{ msg.content }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="openReplyModal('{{ conv.user.id }}', '{{ conv.user.first_name|default:conv.user.username|escapejs }}')" style="background: none; border: none; color: #10b981; padding: 0; font-size: 11px; font-weight: 800; cursor: pointer;">Reply</button>
+                        {% if conv.unread_count > 0 %}
+                        <button onclick="markConvRead({{ conv.user.id }})" style="background: none; border: none; color: #6366f1; padding: 0; font-size: 11px; cursor: pointer; text-decoration: underline;">Mark as Read</button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Reply Modal (Recruiter) -->
+            <div id="reply-modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5);">
+                <div style="background:white; margin:10% auto; padding:30px; width:450px; border-radius:24px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+                    <h2 id="reply-title" style="color: #1e293b;">Reply to Candidate</h2>
+                    <form action="" id="reply-form" method="POST">
+                        {% csrf_token %}
+                        <textarea name="content" placeholder="Type your message..." style="width:100%; height:120px; padding:15px; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:15px; font-family: inherit;"></textarea>
+                        <div style="display:flex; gap:10px;">
+                            <button type="submit" class="btn-premium" style="background: #10b981;">Send Message 🚀</button>
+                            <button type="button" onclick="document.getElementById('reply-modal').style.display='none'" class="btn-premium" style="background:#eee; color:#333;">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <h3 style="margin: 20px 0 20px; font-size: 18px;">Company Profile</h3>
             
             <div style="text-align: center; margin-bottom: 30px;">
                 {% if company.logo %}
@@ -268,7 +353,51 @@
             </div>
         </aside>
     </div>
-</body>
-</html>
+
+    <script>
+    function markRead(noteId) {
+        fetch(`/notifications/read/${noteId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const element = document.getElementById(`note-${noteId}`);
+                    if (element) {
+                        element.style.opacity = '0';
+                        setTimeout(() => {
+                            element.remove();
+                            const remaining = document.querySelectorAll('[id^="note-"]');
+                            if (remaining.length === 0) window.location.reload();
+                        }, 300);
+                    }
+                }
+            });
+    }
+
+    function toggleChat(userId) {
+        const chat = document.getElementById(`chat-${userId}`);
+        if (chat.style.display === 'none') {
+            chat.style.display = 'block';
+        } else {
+            chat.style.display = 'none';
+        }
+    }
+
+    function markConvRead(userId) {
+        fetch(`/messages/read-conv/${userId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) window.location.reload();
+            });
+    }
+
+    function openReplyModal(userId, username) {
+        const title = document.getElementById('reply-title');
+        const form = document.getElementById('reply-form');
+        const modal = document.getElementById('reply-modal');
+        if (title) title.innerText = 'Reply to ' + username;
+        if (form) form.action = "{% url 'send_message' 0 %}".replace('0', userId);
+        if (modal) modal.style.display = 'block';
+    }
+    </script>
 </body>
 </html>

@@ -66,19 +66,39 @@ ESCO_SKILLS_DB = {
     "customer service": ["Customer Support Specialist", "Account Manager"],
     "ui/ux": ["UX Designer", "UI Designer", "Product Designer"],
     "figma": ["UX Designer", "UI Designer"],
+    "adobe xd": ["UX Designer", "UI Designer"],
+    "photoshop": ["Graphic Designer", "UI Designer"],
+    "illustrator": ["Graphic Designer"],
+    "node.js": ["Backend Developer", "Full Stack Developer"],
+    "html": ["Frontend Developer", "Web Developer"],
+    "css": ["Frontend Developer", "Web Developer"],
+    "git": ["Software Engineer", "Developer"],
+    "github": ["Software Engineer", "Developer"],
+    "mongodb": ["Database Administrator", "Backend Developer"],
+    "postgresql": ["Database Administrator", "Backend Developer"],
+    "mysql": ["Database Administrator", "Backend Developer"],
+    "redis": ["Backend Developer"],
+    "rest api": ["Backend Developer", "Full Stack Developer"],
+    "graphql": ["Frontend Developer", "Backend Developer"],
+    "unit testing": ["Software Engineer", "QA Engineer"],
+    "cypress": ["QA Engineer", "Frontend Developer"],
+    "jest": ["Frontend Developer"],
+    "selenium": ["QA Engineer"],
 }
 
 JOB_REQUIREMENTS_DB = {
-    "Software Engineer": ["python", "java", "sql", "git", "agile"],
-    "Frontend Developer": ["javascript", "html", "css", "react", "ui/ux", "typescript"],
+    "Software Engineer": ["python", "java", "sql", "git", "agile", "unit testing"],
+    "Frontend Developer": ["javascript", "html", "css", "react", "ui/ux", "typescript", "git"],
     "Data Scientist": ["python", "machine learning", "sql", "pandas", "data analysis", "deep learning"],
-    "Backend Developer": ["python", "django", "sql", "docker", "linux", "go"],
-    "DevOps Engineer": ["docker", "kubernetes", "aws", "linux", "ci/cd"],
+    "Backend Developer": ["python", "django", "sql", "docker", "linux", "go", "rest api"],
+    "DevOps Engineer": ["docker", "kubernetes", "aws", "linux", "ci/cd", "git"],
     "Cloud Architect": ["aws", "azure", "docker", "kubernetes", "linux"],
     "Project Manager": ["project management", "agile", "scrum", "leadership", "communication"],
-    "UX Designer": ["ui/ux", "figma", "communication", "html", "css"],
+    "UX Designer": ["ui/ux", "figma", "communication", "html", "css", "adobe xd"],
     "AI Engineer": ["python", "machine learning", "deep learning", "tensorflow", "pytorch"],
-    "Data Analyst": ["sql", "data analysis", "python", "pandas", "communication"]
+    "Data Analyst": ["sql", "data analysis", "python", "pandas", "communication"],
+    "Graphic Designer": ["photoshop", "illustrator", "figma", "communication"],
+    "QA Engineer": ["selenium", "unit testing", "cypress", "git", "communication"],
 }
 
 def extract_skills_from_text(text):
@@ -86,12 +106,15 @@ def extract_skills_from_text(text):
         return []
     
     text_lower = text.lower()
+    # Normalize some common variations
+    text_lower = text_lower.replace('node js', 'node.js').replace('nodejs', 'node.js')
+    
     extracted_skills = set()
     
-    # Language-Agnostic Extraction (Bypasses English POS tagging)
+    # Language-Agnostic Extraction
     for skill in ESCO_SKILLS_DB.keys():
-        # Special tech words with symbols don't play well with \b word boundaries
-        if skill in ['c++', 'c#', 'ui/ux', 'ci/cd', '.net']:
+        # Special tech words with symbols or dots
+        if skill in ['c++', 'c#', 'ui/ux', 'ci/cd', '.net', 'node.js']:
             if skill in text_lower:
                 extracted_skills.add(skill)
         else:
@@ -257,23 +280,36 @@ def match_cv_to_job(cv, job):
     matching_skills = list(job_skills.intersection(cv_skills))
     missing_skills = list(job_skills.difference(cv_skills))
     
-    # Accuracy Heuristic: Weigh matching skills heavily
-    # If they have more than 3 matching skills, they are likely a great fit
-    base_match = (len(matching_skills) / len(job_skills)) * 100
+    # Improved Matching Logic
+    # 1. Base score from skill overlap (max 60%)
+    base_match = (len(matching_skills) / len(job_skills)) * 60
     
-    # Boosts
-    boost = 0
-    # Title match is the strongest signal
+    # 2. Title matching bonus (max 30%)
+    title_bonus = 0
+    job_title_words = set(job.title.lower().split())
+    cv_title_words = set(cv.professional_title.lower().split())
+    
+    # Full phrase match
     if job.title.lower() in cv.professional_title.lower() or cv.professional_title.lower() in job.title.lower():
-        boost += 30
+        title_bonus = 30
+    else:
+        # Partial word match bonus
+        common_words = job_title_words.intersection(cv_title_words)
+        # Filter out common stop words if necessary, but for job titles most words are significant
+        if common_words:
+            title_bonus = min(20, len(common_words) * 10)
     
-    # If they have at least 50% of skills, give them a 'quality' boost
-    if base_match >= 50:
-        boost += 20
+    # 3. Experience bonus (max 10%)
+    # Users with more experience entries in a related field should get a slight boost
+    experience_bonus = min(10, cv.experiences.count() * 5)
         
-    match_percentage = int(min(100, base_match + boost))
+    match_percentage = int(min(100, base_match + title_bonus + experience_bonus))
     
-    # Force 100% for perfect keyword matches as requested by user
+    # Quality Floor: If they have the exact title and some skills, don't let it be too low
+    if title_bonus >= 30 and len(matching_skills) > 0:
+        match_percentage = max(match_percentage, 75)
+        
+    # Force 100% for perfect keyword matches
     if not missing_skills and len(matching_skills) > 0:
         match_percentage = 100
         

@@ -153,26 +153,48 @@
             background: white;
             border-radius: 10px;
         }
+        .message-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: background 0.3s;
+        }
+        .message-unread {
+            background: #f0fdf4;
+        }
     </style>
 </head>
 <body>
     <nav class="navbar">
-        <div class="nav-brand">📄 CV Generator</div>
+        <div class="nav-brand"><a href="{% url 'home' %}" style="text-decoration: none; color: inherit;">📄 CV Generator</a></div>
         <div class="nav-menu">
             <span>Welcome, {{ user.first_name|default:user.username }}!</span>
             <a href="{% url 'browse_jobs' %}">Browse Jobs</a>
             <a href="{% url 'browse_trainings' %}">Training Courses</a>
-            <a href="{% url 'home' %}">Create CV</a>
+            <a href="{% url 'cv_builder' %}">Create CV</a>
             <a href="{% url 'logout' %}">Logout</a>
         </div>
     </nav>
     
     <div class="container">
+        <!-- Display Django Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div style="padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; 
+                    {% if message.tags == 'error' %} background: #fee2e2; color: #991b1b; border: 1px solid #f87171;
+                    {% elif message.tags == 'success' %} background: #dcfce7; color: #166534; border: 1px solid #4ade80;
+                    {% else %} background: #fef9c3; color: #854d0e; border: 1px solid #facc15; {% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
         <div class="welcome-card">
             <h1>Welcome to Your Dashboard, {{ user.first_name|default:user.username }}! 👋</h1>
             <p>Manage your CVs or explore new opportunities.</p>
             <div style="display: flex; gap: 15px; margin-top: 20px;">
-                <a href="{% url 'home' %}" class="btn">+ Create New CV</a>
+                <a href="{% url 'cv_builder' %}" class="btn">+ Create New CV</a>
                 <a href="{% url 'browse_jobs' %}" class="btn" style="background: #48bb78;">🚀 Job Opportunities</a>
                 <button onclick="document.getElementById('profile-modal').style.display='block'" class="btn" style="background: #718096;">⚙️ Edit Profile</button>
             </div>
@@ -206,14 +228,82 @@
 
         {% if notifications %}
         <div class="welcome-card" style="border-left: 5px solid #6366f1;">
-            <h2 style="margin-top: 0; font-size: 1.2rem;">🔔 Recent Notifications</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 style="margin: 0; font-size: 1.2rem;">🔔 Recent Notifications</h2>
+                <a href="{% url 'mark_all_notifications_read' %}" style="font-size: 0.8rem; color: #6366f1; text-decoration: none; font-weight: bold;">Mark all as read</a>
+            </div>
             {% for note in notifications %}
-            <div style="padding: 10px 0; border-bottom: 1px solid #eee;">
-                <strong>{{ note.title }}</strong>: {{ note.message }}
-                <div style="font-size: 0.8rem; color: #94a3b8;">{{ note.created_at|timesince }} ago</div>
+            <div id="note-{{ note.id }}" style="padding: 10px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>{{ note.title }}</strong>: {{ note.message }}
+                    <div style="font-size: 0.8rem; color: #94a3b8;">{{ note.created_at|timesince }} ago</div>
+                </div>
+                <button onclick="markRead({{ note.id }})" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.2rem;" title="Dismiss">&times;</button>
             </div>
             {% endfor %}
         </div>
+        {% endif %}
+
+        {% if conversations %}
+        <div class="welcome-card" style="border-left: 5px solid #10b981;">
+            <h2 style="margin-top: 0; font-size: 1.2rem;">💬 Conversations</h2>
+            {% for conv in conversations %}
+            <div class="message-item {% if conv.unread_count > 0 %}message-unread{% endif %}" style="cursor: pointer;" onclick="toggleChat({{ conv.user.id }})">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <strong style="color: #065f46;">
+                        {{ conv.user.first_name|default:conv.user.username }}
+                        {% if conv.unread_count > 0 %}
+                        <span style="background: #ef4444; color: white; border-radius: 10px; padding: 2px 8px; font-size: 0.7rem; margin-left: 5px;">{{ conv.unread_count }}</span>
+                        {% endif %}
+                    </strong>
+                    <span style="font-size: 0.8rem; color: #94a3b8;">{{ conv.last_message.created_at|date:"M d" }}</span>
+                </div>
+                <p style="color: #475569; margin: 0; line-height: 1.5; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {% if conv.last_message.sender == user %}You: {% endif %}{{ conv.last_message.content }}
+                </p>
+            </div>
+
+            <!-- Chat History for this conversation (Hidden by default) -->
+            <div id="chat-{{ conv.user.id }}" style="display:none; background: #f8fafc; padding: 15px; border-radius: 8px; margin-top: -10px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+                <div style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column-reverse;">
+                    {% for msg in conv.messages %}
+                    <div style="margin-bottom: 10px; max-width: 80%; {% if msg.sender == user %}align-self: flex-end; text-align: right;{% else %}align-self: flex-start;{% endif %}">
+                        <div style="display: inline-block; padding: 8px 12px; border-radius: 12px; font-size: 0.85rem; {% if msg.sender == user %}background: #6366f1; color: white;{% else %}background: white; border: 1px solid #e2e8f0;{% endif %}">
+                            {{ msg.content }}
+                        </div>
+                        <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">{{ msg.created_at|date:"H:i" }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="openReplyModal('{{ conv.user.id }}', '{{ conv.user.first_name|default:conv.user.username|escapejs }}')" style="background: #10b981; color: white; border: none; padding: 5px 12px; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Reply</button>
+                    {% if conv.unread_count > 0 %}
+                    <button onclick="markConvRead({{ conv.user.id }})" style="background: none; border: none; color: #6366f1; font-size: 0.8rem; cursor: pointer; text-decoration: underline;">Mark as Read</button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <script>
+        function toggleChat(userId) {
+            const chat = document.getElementById(`chat-${userId}`);
+            if (chat.style.display === 'none') {
+                chat.style.display = 'block';
+            } else {
+                chat.style.display = 'none';
+            }
+        }
+
+        function markConvRead(userId) {
+            // We'll need a new view for this or reuse mark_message_read logic
+            fetch(`/messages/read-conv/${userId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) window.location.reload();
+                });
+        }
+        </script>
         {% endif %}
 
         {% if applications %}
@@ -310,13 +400,49 @@
         {% else %}
             <div class="empty-state">
                 <p>You haven't created any CVs yet.</p>
-                <a href="{% url 'home' %}" class="btn">Create Your First CV</a>
+                <a href="{% url 'cv_builder' %}" class="btn">Create Your First CV</a>
             </div>
         {% endif %}
     </div>
 
     <script>
         (function() {
+            // ==================== NOTIFICATIONS & MESSAGES ====================
+            window.markRead = function(noteId) {
+                fetch(`/notifications/read/${noteId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const element = document.getElementById(`note-${noteId}`);
+                            if (element) {
+                                element.style.opacity = '0';
+                                setTimeout(() => {
+                                    element.remove();
+                                    const remaining = document.querySelectorAll('[id^="note-"]');
+                                    if (remaining.length === 0) window.location.reload();
+                                }, 300);
+                            }
+                        }
+                    });
+            };
+
+            window.markMsgRead = function(msgId) {
+                fetch(`/messages/read/${msgId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) window.location.reload();
+                    });
+            };
+
+            window.openReplyModal = function(userId, username) {
+                const title = document.getElementById('reply-title');
+                const form = document.getElementById('reply-form');
+                const modal = document.getElementById('reply-modal');
+                if (title) title.innerText = 'Reply to ' + username;
+                if (form) form.action = "{% url 'send_message' 0 %}".replace('0', userId);
+                if (modal) modal.style.display = 'block';
+            };
+
             // ==================== INITIALIZATION ====================
             document.addEventListener('DOMContentLoaded', function() {
                 // Add event listeners to all edit buttons
@@ -324,7 +450,7 @@
                     button.addEventListener('click', function(e) {
                         const cvCard = e.target.closest('.cv-card');
                         const cvId = cvCard.dataset.cvId;
-                        window.location.href = '/?edit=' + cvId;
+                        window.location.href = "{% url 'home' %}?edit=" + cvId;
                     });
                 });
                 
