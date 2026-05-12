@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Job Offer</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; padding: 40px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; }
+        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { background: #667eea; color: white; border: none; padding: 15px; width: 100%; border-radius: 30px; cursor: pointer; font-weight: 800; font-size: 16px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Post a New Job Offer</h1>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Job Title</label>
+                <input type="text" name="title" required>
+            </div>
+            <div class="form-group">
+                <label>Location</label>
+                <input type="text" name="location" required>
+            </div>
+            <div class="form-group">
+                <label>Offer Type</label>
+                <select name="offer_type" required>
+                    <option value="Full-time">Full-time</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Internship">Internship</option>
+                    <option value="Freelance">Freelance</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Job Requirements</label>
+                <textarea name="requirements" rows="5" placeholder="Skills, experience, etc." required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Salary Range (Optional)</label>
+                <input type="text" name="salary_range" placeholder="e.g. $50k - $70k">
+            </div>
+            <div class="form-group">
+                <label>Job Description</label>
+                <textarea name="description" rows="10" required></textarea>
+            </div>
+            <button type="submit" class="btn">🚀 Publish Job</button>
+        </form>
+        <p style="text-align: center;"><a href="{% url 'cv_dashboard' %}" style="color: #667eea; text-decoration: none;">Cancel and Return</a></p>
+    </div>
+</body>
+</html>

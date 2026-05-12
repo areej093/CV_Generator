@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Template</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; padding: 40px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 12px; cursor: pointer; border: 3px solid transparent; transition: 0.3s; text-align: center; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .card.active { border-color: #667eea; }
+        .preview { height: 300px; background: #eee; margin-bottom: 15px; border-radius: 6px; }
+        .btn { background: #667eea; color: white; padding: 15px 40px; border-radius: 30px; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 40px; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1 style="text-align:center;">Select Your CV Template</h1>
+    <div class="grid">
+        <div class="card" id="modern" onclick="sel('modern')">
+            <div class="preview" style="border-top: 10px solid #667eea;"></div>
+            <h3>Modern</h3>
+        </div>
+        <div class="card" id="classic" onclick="sel('classic')">
+            <div class="preview" style="background: #fdfaf6;"></div>
+            <h3>Classic</h3>
+        </div>
+        <div class="card" id="creative" onclick="sel('creative')">
+            <div class="preview" style="background: #e74c3c;"></div>
+            <h3>Creative</h3>
+        </div>
+        <div class="card" id="minimal" onclick="sel('minimal')">
+            <div class="preview" style="background: #fff;"></div>
+            <h3>Minimal</h3>
+        </div>
+    </div>
+    <div style="text-align:center;">
+        <button class="btn" onclick="done()">Use Selected Template</button>
+    </div>
+
+    <script>
+        let s = sessionStorage.getItem('selectedTemplate') || 'modern';
+        function sel(id) {
+            s = id;
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            sessionStorage.setItem('selectedTemplate', id);
+        }
+        function done() { window.location.href = '/?template=' + s; }
+        sel(s);
+    </script>
+</body>
+</html>

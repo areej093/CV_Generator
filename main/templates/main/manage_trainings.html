@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Trainings - CV Generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #334155; margin: 0; padding: 0; }
+        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        h1, h2 { color: #1e293b; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .full-width { grid-column: span 2; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; }
+        input, textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; }
+        .btn { padding: 12px 24px; background: #7c3aed; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .training-list { margin-top: 30px; }
+        .training-item { padding: 20px; border: 1px solid #f1f5f9; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .training-info h4 { margin: 0 0 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🎓 Propose a Training Course</h1>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="title">Course Title</label>
+                        <input type="text" name="title" required placeholder="e.g. Advanced Python Masterclass">
+                    </div>
+                    <div class="form-group">
+                        <label for="provider_name">Provider Name</label>
+                        <input type="text" name="provider_name" required placeholder="e.g. Tech Academy">
+                    </div>
+                    <div class="form-group">
+                        <label for="duration">Duration</label>
+                        <input type="text" name="duration" required placeholder="e.g. 4 Weeks / 20 Hours">
+                    </div>
+                    <div class="form-group">
+                        <label for="link">Registration Link</label>
+                        <input type="url" name="link" required placeholder="https://academy.com/course">
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="description">Description</label>
+                        <textarea name="description" rows="4" required></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn">Propose Course</button>
+            </form>
+        </div>
+
+        <h2>Your Proposed Courses</h2>
+        <div class="training-list">
+            {% if trainings %}
+                {% for course in trainings %}
+                    <div class="training-item">
+                        <div class="training-info">
+                            <h4>{{ course.title }}</h4>
+                            <p style="margin: 0; color: #64748b; font-size: 14px;">{{ course.provider_name }} | {{ course.duration }}</p>
+                        </div>
+                        <a href="{{ course.link }}" target="_blank" style="color: #7c3aed; font-weight: 600;">View Link</a>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No courses proposed yet.</p>
+            {% endif %}
+        </div>
+        
+        <a href="{% url 'cv_dashboard' %}" style="display: block; text-align: center; margin-top: 40px; color: #64748b; text-decoration: none;">← Back to Dashboard</a>
+    </div>
+</body>
+</html>

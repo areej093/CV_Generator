@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; margin: 0; padding: 0; }
+        .navbar { background: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-section, .preview-section { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { background: #667eea; color: white; border: none; padding: 12px 20px; border-radius: 20px; cursor: pointer; font-weight: 600; margin-top: 10px; margin-right: 10px; }
+        .item-card { background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #667eea; }
+        .preview-card { border: 1px solid #eee; min-height: 800px; background: white; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" style="font-weight: 800; color: #667eea; text-decoration: none; font-size: 20px;">📄 CV Navigator</a>
+        <div style="display: flex; gap: 20px;">
+            {% if user.is_authenticated %}
+                <a href="{% url 'cv_dashboard' %}" style="text-decoration: none; color: #475569;">Dashboard</a>
+                <a href="{% url 'logout' %}" style="text-decoration: none; color: #475569;">Logout</a>
+            {% else %}
+                <a href="{% url 'login' %}" style="text-decoration: none; color: #475569;">Login</a>
+                <a href="{% url 'register' %}" style="text-decoration: none; color: #475569;">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div id="aiLoader" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.9); z-index:10000; flex-direction:column; align-items:center; justify-content:center; color:white;">
+        <div style="font-size: 64px; animation: spin 2s linear infinite;">🧠</div>
+        <h2 style="margin-top: 20px;">AI Analysis in Progress...</h2>
+        <p style="color: #94a3b8;">Syncing with your profile data and scanning your CV</p>
+    </div>
+
+    <div class="container">
+        <div class="form-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">Your Information</h2>
+                <label class="btn" style="background: #8b5cf6; margin: 0; cursor: pointer; font-size: 13px;">
+                    🤖 Import from PDF (AI Scan)
+                    <input type="file" id="aiImport" accept=".pdf" style="display: none;" onchange="importAI(this)">
+                </label>
+            </div>
+            <form id="cvForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="fullName" oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label>Profile Photo</label>
+                    <p style="font-size: 12px; color: #64748b;">(Upload your photo on the <b>Dashboard</b> after saving)</p>
+                </div>
+                <div class="form-group">
+                    <label>Professional Title</label>
+                    <input type="text" id="professionalTitle" oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" id="phone" oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label>LinkedIn / Portfolio Link (for QR Code)</label>
+                    <input type="url" id="linkedinUrl" placeholder="https://linkedin.com/in/..." oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label>Summary</label>
+                    <textarea id="summary" rows="3" oninput="updatePreview()"></textarea>
+                </div>
+
+                <h3>Work Experience</h3>
+                <div id="expContainer"></div>
+                <button type="button" onclick="addExp()">+ Add Experience</button>
+
+                <h3>Education</h3>
+                <div id="eduContainer"></div>
+                <button type="button" onclick="addEdu()">+ Add Education</button>
+
+                <h3>Skills</h3>
+                <div id="skillContainer"></div>
+                <button type="button" onclick="addSkill()">+ Add Skill</button>
+
+                <div style="margin-top: 30px;">
+                    <button type="button" onclick="saveCV()" style="background: #10b981;">💾 Save CV</button>
+                    <button type="button" onclick="location.reload()" style="background: #94a3b8;">Clear All</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="preview-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">Live Preview</h2>
+                <a href="{% url 'template_selector' %}" style="color: #667eea; font-weight: bold; text-decoration: none;">🎨 Change Template</a>
+            </div>
+            <div id="livePreview" class="preview-card"></div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let template = urlParams.get('template') || 'modern';
+        let experiences = []; let education = []; let skills = [];
+
+        function addExp() {
+            const id = Date.now(); experiences.push(id);
+            const h = `<div class="item-card" id="exp-${id}">
+                <input type="text" class="exp-pos" placeholder="Position" oninput="updatePreview()">
+                <input type="text" class="exp-com" placeholder="Company" style="margin-top:5px;" oninput="updatePreview()">
+                <input type="text" class="exp-dur" placeholder="Duration (e.g. 2020 - Present)" style="margin-top:5px;" oninput="updatePreview()">
+                <textarea class="exp-desc" placeholder="Description" style="margin-top:5px;" oninput="updatePreview()"></textarea>
+                <button type="button" onclick="remove('exp', ${id})" style="background:#fee2e2; color:#ef4444; padding:5px 10px; font-size:12px; border:none; cursor:pointer; margin-top:5px;">Remove</button>
+            </div>`;
+            document.getElementById('expContainer').insertAdjacentHTML('beforeend', h);
+            updatePreview();
+        }
+
+        function addEdu() {
+            const id = Date.now()+1; education.push(id);
+            const h = `<div class="item-card" id="edu-${id}">
+                <input type="text" class="edu-deg" placeholder="Degree" oninput="updatePreview()">
+                <input type="text" class="edu-ins" placeholder="Institution" style="margin-top:5px;" oninput="updatePreview()">
+                <input type="text" class="edu-year" placeholder="Year (e.g. 2022)" style="margin-top:5px;" oninput="updatePreview()">
+                <button type="button" onclick="remove('edu', ${id})" style="background:#fee2e2; color:#ef4444; padding:5px 10px; font-size:12px; border:none; cursor:pointer;">Remove</button>
+            </div>`;
+            document.getElementById('eduContainer').insertAdjacentHTML('beforeend', h);
+            updatePreview();
+        }
+
+        function addSkill() {
+            const id = Date.now()+2; skills.push(id);
+            const h = `<div class="item-card" id="skill-${id}">
+                <div style="display:flex; gap:10px;">
+                    <input type="text" class="skill-name" placeholder="Skill" style="flex:2;" oninput="updatePreview()">
+                    <select class="skill-level" style="flex:1;" oninput="updatePreview()">
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate" selected>Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                        <option value="Expert">Expert</option>
+                    </select>
+                </div>
+                <button type="button" onclick="remove('skill', ${id})" style="background:#fee2e2; color:#ef4444; padding:5px 10px; font-size:12px; border:none; cursor:pointer; margin-top:5px;">Remove</button>
+            </div>`;
+            document.getElementById('skillContainer').insertAdjacentHTML('beforeend', h);
+            updatePreview();
+        }
+
+        function remove(t, id) { document.getElementById(`${t}-${id}`).remove(); updatePreview(); }
+
+        function updatePreview() {
+            const n = document.getElementById('fullName').value || 'Your Name';
+            const t = document.getElementById('professionalTitle').value || 'Title';
+            const s = document.getElementById('summary').value || 'Summary...';
+            
+            const l = document.getElementById('linkedinUrl').value || 'PREVIEW';
+            let html = '';
+            const qrHtml = `<div style="text-align:right;"><div style="display:inline-block; padding:5px; border:1px solid #ddd; background:white;"><img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(l)}" style="width:60px; height:60px;"><p style="font-size:8px; margin:2px 0 0; text-align:center; color:#999;">SCAN ME</p></div></div>`;
+
+            if (template === 'modern') {
+                html = `<div style="padding:40px; border-top:15px solid #667eea;">${qrHtml}<h1>${n}</h1><p style="color:#667eea;font-weight:bold;">${t}</p><hr><p>${s}</p></div>`;
+            } else if (template === 'classic') {
+                html = `<div style="padding:40px; text-align:center; background:#fdfaf6;">${qrHtml}<h1>${n}</h1><p style="font-style:italic;">${t}</p><hr><p>${s}</p></div>`;
+            } else if (template === 'creative') {
+                html = `<div style="display:grid; grid-template-columns:60px 1fr; min-height:800px;"><div style="background:#e74c3c;"></div><div style="padding:40px;">${qrHtml}<h1>${n}</h1><p style="color:#e74c3c;">${t}</p><p>${s}</p></div></div>`;
+            } else {
+                html = `<div style="padding:40px;">${qrHtml}<h1>${n}</h1><p>${t}</p><p>${s}</p></div>`;
+            }
+            document.getElementById('livePreview').innerHTML = html;
+        }
+
+        async function saveCV() {
+            const data = {
+                personalInfo: {
+                    name: document.getElementById('fullName').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                    title: document.getElementById('professionalTitle').value,
+                    summary: document.getElementById('summary').value,
+                    linkedin: document.getElementById('linkedinUrl').value
+                },
+                template: template,
+                experiences: [], education: [], skills: []
+            };
+            
+            document.querySelectorAll('[id^="exp-"]').forEach(i => {
+                data.experiences.push({ 
+                    position: i.querySelector('.exp-pos').value, 
+                    company: i.querySelector('.exp-com').value, 
+                    duration: i.querySelector('.exp-dur').value || 'Present',
+                    description: i.querySelector('.exp-desc').value 
+                });
+            });
+
+            document.querySelectorAll('[id^="edu-"]').forEach(i => {
+                data.education.push({ 
+                    degree: i.querySelector('.edu-deg').value, 
+                    institution: i.querySelector('.edu-ins').value, 
+                    year: i.querySelector('.edu-year').value 
+                });
+            });
+
+            document.querySelectorAll('[id^="skill-"]').forEach(i => {
+                data.skills.push({ 
+                    name: i.querySelector('.skill-name').value, 
+                    level: i.querySelector('.skill-level').value 
+                });
+            });
+
+            const res = await fetch('/api/create-cv/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) { alert("Saved!"); window.location.href = "/dashboard/"; }
+        }
+
+        function importAI(input) {
+            if (!input.files || !input.files[0]) return;
+            
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+            
+            document.getElementById('aiLoader').style.display = 'flex';
+            
+            fetch('/api/v1/nlp/parse-pdf/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('aiLoader').style.display = 'none';
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                // Auto-fill Personal Info
+                if (data.personal_info) {
+                    document.getElementById('fullName').value = data.personal_info.name || '';
+                    document.getElementById('email').value = data.personal_info.email || '';
+                    document.getElementById('phone').value = data.personal_info.phone || '';
+                    document.getElementById('professionalTitle').value = data.personal_info.title || '';
+                    document.getElementById('summary').value = data.personal_info.summary || '';
+                }
+                
+                // Clear and Fill Experience
+                const expContainer = document.getElementById('expContainer');
+                expContainer.innerHTML = '';
+                experiences = [];
+                if (data.experience) {
+                    data.experience.forEach(exp => {
+                        addExp();
+                        const cards = expContainer.getElementsByClassName('item-card');
+                        const lastCard = cards[cards.length - 1];
+                        lastCard.querySelector('input[placeholder="Position"]').value = exp.role || '';
+                        lastCard.querySelector('input[placeholder="Company"]').value = exp.company || '';
+                        lastCard.querySelector('input[placeholder="Duration"]').value = exp.dates || '';
+                        lastCard.querySelector('textarea').value = exp.description || '';
+                    });
+                }
+                
+                // Clear and Fill Education
+                const eduContainer = document.getElementById('eduContainer');
+                eduContainer.innerHTML = '';
+                education = [];
+                if (data.education) {
+                    data.education.forEach(edu => {
+                        addEdu();
+                        const cards = eduContainer.getElementsByClassName('item-card');
+                        const lastCard = cards[cards.length - 1];
+                        lastCard.querySelector('input[placeholder="Degree"]').value = edu.degree || '';
+                        lastCard.querySelector('input[placeholder="Institution"]').value = edu.school || '';
+                        lastCard.querySelector('input[placeholder="Year"]').value = edu.date || '';
+                    });
+                }
+                
+                // Clear and Fill Skills
+                const skillContainer = document.getElementById('skillContainer');
+                skillContainer.innerHTML = '';
+                skills = [];
+                if (data.skills) {
+                    data.skills.forEach(s => {
+                        addSkill();
+                        const cards = skillContainer.getElementsByClassName('item-card');
+                        const lastCard = cards[cards.length - 1];
+                        lastCard.querySelector('input[placeholder="Skill Name"]').value = s || '';
+                    });
+                }
+                
+                updatePreview();
+            })
+            .catch(err => {
+                document.getElementById('aiLoader').style.display = 'none';
+                alert('AI Analysis failed. Please try again.');
+                console.error(err);
+            });
+        }
+
+        addExp(); addEdu(); addSkill(); updatePreview();
+
+        // Keyboard Shortcut for Template Cycling
+        document.addEventListener('keydown', function(e) {
+            // Check if user is typing in an input or textarea
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            if (e.key.toLowerCase() === 't') {
+                const templates = ['modern', 'classic', 'creative', 'minimal'];
+                let idx = templates.indexOf(template);
+                template = templates[(idx + 1) % templates.length];
+                
+                // Update URL for consistency
+                const url = new URL(window.location);
+                url.searchParams.set('template', template);
+                window.history.pushState({}, '', url);
+                
+                updatePreview();
+                
+                // Flash indicator
+                const indicator = document.createElement('div');
+                indicator.style = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:10000; animation: fadeOut 1s forwards;";
+                indicator.innerText = `Template: ${template.toUpperCase()}`;
+                document.body.appendChild(indicator);
+                setTimeout(() => indicator.remove(), 1000);
+            }
+        });
+    </script>
+    <style>
+        @keyframes fadeOut { from {opacity:1;} to {opacity:0;} }
+    </style>
+</body>
+</html>

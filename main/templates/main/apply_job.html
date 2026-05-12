@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply for {{ job.title }} - CV Generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8fafc;
+            color: #334155;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+        
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+        
+        .job-header {
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        h1 { margin: 0; color: #1e293b; }
+        .company { color: #667eea; font-weight: 600; font-size: 20px; margin-top: 5px; }
+        
+        .section-title {
+            font-weight: 800;
+            color: #1e293b;
+            margin: 20px 0 10px 0;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .description {
+            line-height: 1.6;
+            color: #475569;
+            white-space: pre-line;
+        }
+        
+        .apply-box {
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 30px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-family: inherit;
+        }
+        
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .btn-submit:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="job-header">
+                <h1>{{ job.title }}</h1>
+                <div class="company">{{ job.company.name }}</div>
+                <div style="margin-top: 10px; font-size: 14px; color: #64748b;">
+                    📍 {{ job.location }} | 💰 {{ job.salary_range|default:"Competitive" }}
+                </div>
+            </div>
+            
+            <div class="section-title">Job Description</div>
+            <div class="description">{{ job.description }}</div>
+            
+            <div class="section-title">Requirements</div>
+            <div class="description">{{ job.requirements }}</div>
+            
+            <div class="apply-box">
+                <h3 style="margin-top: 0;">Submit Your Application</h3>
+                <form method="POST">
+                    {% csrf_token %}
+                    <label for="cv_id" style="display: block; margin-bottom: 8px; font-weight: 600;">Choose one of your CVs:</label>
+                    
+                    {% if cvs %}
+                        <select name="cv_id" id="cv_id" required>
+                            {% for cv in cvs %}
+                                <option value="{{ cv.id }}">{{ cv.full_name }} - {{ cv.professional_title }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn-submit">Send Application</button>
+                    {% else %}
+                        <p style="color: #ef4444;">You need to create a CV before you can apply.</p>
+                        <a href="{% url 'home' %}" style="color: #667eea; font-weight: 600;">Create a CV now →</a>
+                        <button type="button" disabled class="btn-submit">Send Application</button>
+                    {% endif %}
+                </form>
+            </div>
+            
+            <a href="{% url 'browse_jobs' %}" style="display: block; text-align: center; margin-top: 20px; color: #64748b; text-decoration: none;">← Back to Job List</a>
+        </div>
+    </div>
+</body>
+</html>

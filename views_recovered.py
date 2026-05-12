@@ -1,0 +1,2 @@
+"import os\nimport pdfkit\nimport qrcode\nimport base64\nimport json\nfrom io import BytesIO\nfrom django.shortcuts import render, redirect, get_object_or_404\nfrom django.contrib.auth.decorators import login_required\nfrom django.contrib import messages\n
+<truncated 9384 bytes>

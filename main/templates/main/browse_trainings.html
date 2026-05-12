@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Courses - CV Generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8fafc;
+            color: #334155;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        h1 { color: #1e293b; }
+        
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .course-card {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .provider {
+            color: #7c3aed;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .course-title {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            flex-grow: 1;
+        }
+        
+        .duration {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 15px;
+        }
+        
+        .btn-view {
+            padding: 10px;
+            background: #7c3aed;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Available Training Courses 🎓</h1>
+        <p>Enhance your skills with these curated courses.</p>
+        
+        {% if trainings %}
+            <div class="course-grid">
+                {% for course in trainings %}
+                    <div class="course-card">
+                        <div class="provider">🏫 {{ course.provider }}</div>
+                        <div class="course-title">{{ course.title }}</div>
+                        <div class="duration">⏱ Duration: {{ course.duration }}</div>
+                        <a href="{{ course.link }}" target="_blank" class="btn-view">View Course</a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 100px 0;">
+                <h2>No courses available yet.</h2>
+                <p>Admins will add new training opportunities soon!</p>
+            </div>
+        {% endif %}
+        
+        <a href="{% url 'cv_dashboard' %}" style="display: block; text-align: center; margin-top: 40px; color: #64748b; text-decoration: none;">← Back to Dashboard</a>
+    </div>
+</body>
+</html>

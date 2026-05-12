@@ -1,0 +1,274 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hiring Dashboard - {{ company.name }}</title>
+    <link rel="stylesheet" href="{% static 'main/css/premium.css' %}">
+    <style>
+        .layout {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: #0f172a;
+            color: white;
+            padding: 40px 20px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .right-sidebar {
+            background: white;
+            border-left: 1px solid #e2e8f0;
+            padding: 40px 25px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .sidebar-brand {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 50px;
+            padding-left: 15px;
+        }
+
+        .sidebar .nav-link {
+            color: #94a3b8;
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            border-radius: 12px;
+            text-decoration: none;
+            display: block;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background: rgba(255,255,255,0.05);
+            color: white;
+        }
+
+        .main-content {
+            padding: 50px;
+            background: #f8fafc;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 30px;
+            border-radius: 24px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .job-row {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+            transition: 0.3s;
+        }
+
+        .job-row:hover {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            transform: translateX(10px);
+        }
+
+        .app-count-badge {
+            background: #e0e7ff;
+            color: #4f46e5;
+            padding: 6px 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .profile-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            margin-top: 20px;
+        }
+
+        .ia-badge {
+            background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand">CV Navigator</div>
+            <nav style="flex: 1;">
+                <a href="{% url 'cv_dashboard' %}" class="nav-link active">🏠 Overview</a>
+                <a href="{% url 'post_job' %}" class="nav-link">➕ Post New Job</a>
+                <a href="{% url 'manage_trainings' %}" class="nav-link">🎓 Manage Trainings</a>
+                <a href="{% url 'manage_company' %}" class="nav-link">⚙️ Settings</a>
+            </nav>
+            <div style="padding: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <a href="{% url 'logout' %}" class="nav-link" style="color: #fb7185;">🚪 Logout</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 50px;">
+                <div>
+                    <h1 style="font-size: 32px; margin-bottom: 8px;">Welcome back, {{ user.first_name|default:user.username }}!</h1>
+                    <p style="color: #64748b;">Here is your recruitment performance for today.</p>
+                </div>
+                <a href="{% url 'post_job' %}" class="btn-premium">+ New Offer</a>
+            </header>
+
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{ jobs|length }}</div>
+                    <div class="stat-label">Active Listings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: #6366f1;">
+                        {% if jobs %}{{ jobs.0.applications.count }}{% else %}0{% endif %}
+                    </div>
+                    <div class="stat-label">New Applications</div>
+                </div>
+            </div>
+
+            <h2 style="margin-bottom: 25px; font-size: 20px;">Active Job & Internship Offers</h2>
+
+            {% if jobs %}
+                {% for job in jobs %}
+                    <div class="job-row">
+                        <div>
+                            <h3 style="margin: 0; font-size: 18px;">{{ job.title }}</h3>
+                            <p style="color: #64748b; font-size: 13px; margin: 4px 0 0;">{{ job.get_offer_type_display }} • {{ job.location }}</p>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 20px;">
+                            <div class="app-count-badge">{{ job.applications.count }} Applicants</div>
+                            <a href="{% url 'view_applications' job.id %}" class="btn-premium" style="font-size: 12px; padding: 10px 18px;">Review Candidates</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <h2 style="margin: 50px 0 25px; font-size: 20px; display: flex; align-items: center; gap: 10px;">
+                🏆 Badge Verification Requests
+                <span class="ia-badge" style="margin:0;">PENDING REVIEW</span>
+            </h2>
+
+            {% if verification_requests %}
+                {% for req in verification_requests %}
+                    <div class="job-row">
+                        <div style="display: flex; align-items: center; gap: 20px;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: #fef3c7; display: flex; align-items: center; justify-content: center; font-size: 20px;">👤</div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 16px;">{{ req.user.first_name }} {{ req.user.last_name }}</h3>
+                                <p style="color: #64748b; font-size: 13px; margin: 4px 0 0;">Course: <strong>{{ req.course.title }}</strong></p>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 20px;">
+                            <a href="{{ req.proof_file.url }}" target="_blank" style="color: #6366f1; font-weight: 600; font-size: 13px; text-decoration: none;">📄 View Proof</a>
+                            
+                            <div style="display: flex; gap: 8px;">
+                                <form action="{% url 'review_accomplishment' req.id %}" method="POST">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="approve">
+                                    <button type="submit" class="btn-premium" style="font-size: 11px; padding: 8px 15px; background: #10b981;">Approve & Issue Badge</button>
+                                </form>
+                                <form action="{% url 'review_accomplishment' req.id %}" method="POST">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="reject">
+                                    <button type="submit" class="btn-premium" style="font-size: 11px; padding: 8px 15px; background: #ef4444;">Reject</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div style="padding: 40px; background: white; border-radius: 24px; border: 1px dashed #cbd5e1; text-align: center;">
+                    <p style="color: #64748b; margin: 0;">No pending verification requests.</p>
+                </div>
+            {% endif %}
+        </main>
+
+        <aside class="right-sidebar">
+            <div class="ia-badge">🤖 IA INSIGHTS</div>
+            <h3 style="margin: 0 0 20px; font-size: 18px;">Company Profile</h3>
+            
+            <div style="text-align: center; margin-bottom: 30px;">
+                {% if company.logo %}
+                    <img src="{{ company.logo.url }}" style="width: 100px; height: 100px; border-radius: 20px; object-fit: cover; margin-bottom: 15px; border: 1px solid #e2e8f0;">
+                {% else %}
+                    <div style="width: 80px; height: 80px; background: #f1f5f9; border-radius: 20px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 32px;">🏢</div>
+                {% endif %}
+                <h4 style="margin: 0; font-size: 20px;">{{ company.name }}</h4>
+                <p style="color: #64748b; font-size: 14px; margin: 5px 0 20px;">{{ company.location }}</p>
+                <a href="{% url 'manage_company' %}" style="color: #6366f1; font-weight: 700; text-decoration: none; font-size: 14px;">Edit Profile</a>
+            </div>
+
+            <div class="profile-card">
+                <h5 style="margin: 0 0 10px; font-size: 12px; color: #94a3b8; text-transform: uppercase;">About</h5>
+                <p style="font-size: 13px; color: #475569; line-height: 1.5; margin: 0;">{{ company.description|truncatewords:30 }}</p>
+            </div>
+
+            <div class="profile-card" style="background: #eff6ff; border-color: #bfdbfe;">
+                <h5 style="margin: 0 0 10px; font-size: 12px; color: #1e40af; text-transform: uppercase;">🤖 IA Performance</h5>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 14px; color: #1e3a8a;">Matching Accuracy</span>
+                    <strong style="color: #1d4ed8;">94%</strong>
+                </div>
+                <div style="width: 100%; height: 6px; background: #dbeafe; border-radius: 10px; margin-top: 8px;">
+                    <div style="width: 94%; height: 100%; background: #2563eb; border-radius: 10px;"></div>
+                </div>
+            </div>
+        </aside>
+    </div>
+</body>
+</html>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .container {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .content {
+            padding: 30px 0;
+            line-height: 1.6;
+            color: #334155;
+        }
+        .btn {
+            display: block;
+            width: 200px;
+            margin: 30px auto;
+            padding: 14px;
+            background-color: #667eea;
+            color: white !important;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .footer {
+            font-size: 12px;
+            color: #94a3b8;
+            text-align: center;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2 style="color: #667eea; margin: 0;">CV Generator</h2>
+        </div>
+        <div class="content">
+            <p>Hello {{ full_name|default:username }},</p>
+            <p>Thank you for joining our platform! We're excited to help you build a professional career.</p>
+            <p>Please click the button below to activate your account and start generating your CV:</p>
+            
+            <a href="{{ activation_link }}" class="btn">Activate My Account</a>
+            
+            <p>If the button doesn't work, copy and paste this link into your browser:</p>
+            <p style="font-size: 11px; color: #64748b; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px dashed #cbd5e1;">{{ activation_link }}</p>
+        </div>
+        <div class="footer">
+            &copy; 2026 CV Generator. All rights reserved.<br>
+            If you didn't create an account, please ignore this email.
+        </div>
+    </div>
+</body>
+</html>

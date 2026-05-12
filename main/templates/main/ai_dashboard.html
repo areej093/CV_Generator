@@ -1,0 +1,284 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Profile Command Center - CV Navigator</title>
+    <link rel="stylesheet" href="{% static 'main/css/premium.css' %}">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Inter:wght@400;500;700&display=swap');
+        
+        :root {
+            --bg-dark: #0f172a;
+            --surface-dark: #1e293b;
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.5);
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .loader-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-dark);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .brain-loader {
+            font-size: 80px;
+            animation: pulse-glow 2s infinite ease-in-out;
+            margin-bottom: 20px;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px var(--primary-glow)); }
+            50% { transform: scale(1.1); filter: drop-shadow(0 0 30px var(--primary-glow)); }
+        }
+
+        .dashboard-header {
+            padding: 100px 40px 140px;
+            text-align: center;
+            background: radial-gradient(circle at top, #1e1b4b 0%, var(--bg-dark) 100%);
+        }
+
+        .main-container {
+            max-width: 1300px;
+            margin: -100px auto 100px;
+            padding: 0 40px;
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 40px;
+        }
+
+        .ai-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 40px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .completeness-ring {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: conic-gradient(var(--success) calc(var(--percent) * 1%), #334155 0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+
+        .completeness-ring::after {
+            content: "";
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            background: var(--surface-dark);
+            border-radius: 50%;
+        }
+
+        .completeness-value {
+            position: relative;
+            z-index: 10;
+            font-size: 42px;
+            font-weight: 800;
+            font-family: 'Outfit', sans-serif;
+            color: white;
+        }
+
+        .skill-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .skill-tag {
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .skill-tag.explicit { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border-color: rgba(99, 102, 241, 0.3); }
+        .skill-tag.nlp { background: rgba(168, 85, 247, 0.15); color: #d8b4fe; border-color: rgba(168, 85, 247, 0.3); }
+
+        .career-path {
+            background: rgba(255,255,255,0.02);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 25px;
+            border-left: 6px solid var(--primary);
+            transition: transform 0.3s ease;
+        }
+
+        .career-path:hover { transform: translateX(10px); background: rgba(255,255,255,0.04); }
+
+        .badge {
+            padding: 6px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .badge-match { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        
+        .fade-in { animation: fadeIn 0.8s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .btn-back {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 12px 24px;
+            border-radius: 15px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="loader" class="loader-overlay">
+        <div class="brain-loader">🧠</div>
+        <h2 style="font-family: 'Outfit', sans-serif;">AI Analysis in Progress...</h2>
+        <p style="color: #94a3b8;">Scanning CV with Spacy NLP Engine</p>
+    </div>
+
+    <a href="{% url 'cv_dashboard' %}" class="btn-back">← Dashboard</a>
+
+    <div class="dashboard-header">
+        <h1 style="font-family: 'Outfit', sans-serif; font-size: 56px; margin: 0 0 15px;">Intelligent Profile Command Center</h1>
+        <p style="color: #94a3b8; font-size: 20px;">AI Performance Analysis for <span style="color: white; font-weight: 700;">{{ cv.full_name }}</span></p>
+    </div>
+
+    <div class="main-container" id="content" style="display: none;">
+        <!-- Left Side -->
+        <aside>
+            <div class="ai-card" style="margin-bottom: 30px; text-align: center;">
+                <h3 style="margin-bottom: 30px; font-family: 'Outfit', sans-serif;">Profile Completeness</h3>
+                <div class="completeness-ring" id="completeness-ring" style="--percent: 0;">
+                    <div class="completeness-value" id="completeness-val">0%</div>
+                </div>
+                <p style="color: #94a3b8; font-size: 14px; line-height: 1.6;">
+                    Your CV is optimized for <span style="color: var(--success);">ATS algorithms</span>. A higher score increases visibility to recruiters.
+                </p>
+            </div>
+
+            <div class="ai-card">
+                <h3 style="margin-bottom: 20px; font-family: 'Outfit', sans-serif;">Detected Skills & Tech</h3>
+                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <span style="font-size: 11px; color: #a5b4fc;">● EXPLICIT</span>
+                    <span style="font-size: 11px; color: #d8b4fe;">● NLP DETECTED</span>
+                </div>
+                <div class="skill-cloud" id="skills-cloud">
+                    <!-- Skills will be injected -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Side -->
+        <main>
+            <div class="ai-card">
+                <h2 style="margin-bottom: 40px; font-family: 'Outfit', sans-serif; display: flex; align-items: center; gap: 15px;">
+                    🚀 Recommended Career Roadmaps
+                </h2>
+                <div id="career-roadmaps">
+                    <!-- Roadmaps will be injected -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cvId = "{{ cv.id }}";
+            
+            fetch(`/api/v1/nlp/cv/${cvId}/analyze/`)
+                .then(res => {
+                    if (!res.ok) throw new Error('AI analysis failed');
+                    return res.json();
+                })
+                .then(data => {
+                    document.getElementById('loader').style.display = 'none';
+                    document.getElementById('content').style.display = 'grid';
+
+                    // 1. Completeness Score
+                    const score = data.completeness_score || 0;
+                    document.getElementById('completeness-val').textContent = score + '%';
+                    document.getElementById('completeness-ring').style.setProperty('--percent', score);
+
+                    // 2. Skills (Explicit + NLP)
+                    const cloud = document.getElementById('skills-cloud');
+                    data.explicit_skills.forEach(s => {
+                        cloud.innerHTML += `<span class="skill-tag explicit">${s.toUpperCase()}</span>`;
+                    });
+                    data.nlp_extracted_skills.forEach(s => {
+                        if (!data.explicit_skills.includes(s)) {
+                            cloud.innerHTML += `<span class="skill-tag nlp">✨ ${s.toUpperCase()}</span>`;
+                        }
+                    });
+
+                    // 3. Career Roadmaps
+                    const roadmapContainer = document.getElementById('career-roadmaps');
+                    if (data.recommended_jobs && data.recommended_jobs.length > 0) {
+                        data.recommended_jobs.forEach(job => {
+                            roadmapContainer.innerHTML += `
+                                <div class="career-path fade-in">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                        <h3 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 24px;">${job.job_title}</h3>
+                                        <span class="badge badge-match">${job.match_percentage}% Match</span>
+                                    </div>
+                                    <p style="color: #94a3b8; font-size: 15px; margin-bottom: 20px;">
+                                        Based on your skills and experience, our AI identifies you as a strong candidate for this career path.
+                                    </p>
+                                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 15px;">
+                                        <strong style="color: #f59e0b; font-size: 12px; text-transform: uppercase;">Gap Analysis:</strong>
+                                        <div style="color: #cbd5e1; font-size: 14px; margin-top: 5px;">
+                                            ${job.missing_skills.length > 0 
+                                                ? `To reach 100%, consider learning: <span style="color: white; font-weight: 600;">${job.missing_skills.join(', ')}</span>`
+                                                : `Perfect alignment! You have all the core skills for this role.`}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        roadmapContainer.innerHTML = '<p style="color: #94a3b8; text-align: center; padding: 40px;">Add more skills to your CV to unlock AI career recommendations!</p>';
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('loader').innerHTML = `
+                        <div style="font-size: 50px;">⚠️</div>
+                        <h2>AI Analysis Unavailable</h2>
+                        <p style="color: #94a3b8; margin-bottom: 20px;">We couldn't process your CV analysis at this time.</p>
+                        <a href="{% url 'cv_dashboard' %}" class="btn-premium">Return to Dashboard</a>
+                    `;
+                });
+        });
+    </script>
+</body>
+</html>
