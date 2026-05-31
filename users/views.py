@@ -68,6 +68,10 @@ def register_view(request):
             user.is_active = False
             user.save()
             
+            # Profile is auto-created, update the user_type
+            user.profile.user_type = form.cleaned_data.get('user_type', 'student')
+            user.profile.save()
+            
             # Generate token and uid
             token = default_token_generator.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
@@ -79,6 +83,7 @@ def register_view(request):
             # Prepare HTML Message
             html_message = render_to_string('users/email/activation_email.html', {
                 'full_name': user.first_name,
+                'username': user.username,
                 'activation_link': activation_link,
             })
             plain_message = strip_tags(html_message)

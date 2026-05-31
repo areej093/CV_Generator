@@ -25,6 +25,8 @@ class CV(models.Model):
     summary = models.TextField(blank=True)
 
     linkedin_url = models.URLField(max_length=500, blank=True, null=True)
+    github_url = models.URLField(max_length=500, blank=True, null=True)
+    website_url = models.URLField(max_length=500, blank=True, null=True)
     
     
     def __str__(self):
@@ -154,6 +156,7 @@ class Application(models.Model):
     cv = models.ForeignKey(CV, on_delete=models.CASCADE, related_name='job_applications')
     applied_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    ai_score = models.IntegerField(default=0)
     
     def __str__(self):
         return f"{self.cv.full_name} - {self.job_offer.title}"

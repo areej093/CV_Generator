@@ -1,121 +1,263 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CV Generator</title>
+    <title>CV Builder - CV Navigator</title>
+    <link rel="stylesheet" href="{% static 'main/css/premium.css' %}">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; margin: 0; padding: 0; }
-        .navbar { background: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
-        .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-section, .preview-section { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: 600; }
-        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { background: #667eea; color: white; border: none; padding: 12px 20px; border-radius: 20px; cursor: pointer; font-weight: 600; margin-top: 10px; margin-right: 10px; }
-        .item-card { background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #667eea; }
-        .preview-card { border: 1px solid #eee; min-height: 800px; background: white; }
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 30px;
+        }
+
+        .form-section {
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+            padding-right: 15px;
+        }
+
+        .form-section::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .form-section::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .preview-section {
+            position: sticky;
+            top: 100px;
+            height: calc(100vh - 120px);
+        }
+
+        .preview-container {
+            height: 100%;
+            overflow-y: auto;
+            background: #f1f5f9;
+            border-radius: 24px;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .preview-card {
+            width: 100%;
+            max-width: 800px;
+            min-height: 1050px;
+            background: white;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            transform-origin: top center;
+        }
+
+        .step-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 14px;
+        }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-header); font-size: 14px; }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .item-card {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 15px;
+            border: 1px dashed #cbd5e1;
+            position: relative;
+        }
+
+        .btn-add {
+            background: #f1f5f9;
+            color: var(--primary);
+            border: 2px dashed #cbd5e1;
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-add:hover {
+            background: #e0e7ff;
+            border-color: var(--primary);
+        }
+
+        @media (max-width: 1024px) {
+            .layout { grid-template-columns: 1fr; }
+            .preview-section { position: static; height: auto; }
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <a href="/" style="font-weight: 800; color: #667eea; text-decoration: none; font-size: 20px;">📄 CV Navigator</a>
-        <div style="display: flex; gap: 20px;">
+    <nav class="glass-nav">
+        <a href="{% url 'home' %}" class="sidebar-brand" style="text-decoration: none; margin: 0;">CV Navigator</a>
+        <div style="display: flex; gap: 25px; align-items: center;">
             {% if user.is_authenticated %}
-                <a href="{% url 'cv_dashboard' %}" style="text-decoration: none; color: #475569;">Dashboard</a>
-                <a href="{% url 'logout' %}" style="text-decoration: none; color: #475569;">Logout</a>
+                <a href="{% url 'cv_dashboard' %}" style="text-decoration: none; color: var(--text-body); font-weight: 600;">Dashboard</a>
+                <a href="{% url 'logout' %}" class="btn-premium" style="padding: 8px 20px; font-size: 14px; background: #fb7185;">Logout</a>
             {% else %}
-                <a href="{% url 'login' %}" style="text-decoration: none; color: #475569;">Login</a>
-                <a href="{% url 'register' %}" style="text-decoration: none; color: #475569;">Register</a>
+                <a href="{% url 'login' %}" style="text-decoration: none; color: var(--text-body); font-weight: 600;">Login</a>
+                <a href="{% url 'register' %}" class="btn-premium" style="padding: 8px 20px; font-size: 14px;">Get Started</a>
             {% endif %}
         </div>
     </nav>
 
-    <div id="aiLoader" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.9); z-index:10000; flex-direction:column; align-items:center; justify-content:center; color:white;">
-        <div style="font-size: 64px; animation: spin 2s linear infinite;">🧠</div>
-        <h2 style="margin-top: 20px;">AI Analysis in Progress...</h2>
-        <p style="color: #94a3b8;">Syncing with your profile data and scanning your CV</p>
+    <div id="aiLoader" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.95); z-index:10000; flex-direction:column; align-items:center; justify-content:center; color:white; backdrop-filter: blur(10px);">
+        <div class="ai-glow" style="font-size: 80px; margin-bottom: 30px;">🧠</div>
+        <h2 style="color: white; font-size: 32px; margin-bottom: 10px;">AI is analyzing your profile...</h2>
+        <p style="color: #94a3b8; font-size: 18px;">Extracting skills and mapping your career path</p>
     </div>
 
-    <div class="container">
-        <!-- Display Django Messages -->
-        {% if messages %}
-            <div style="grid-column: 1 / -1;">
+    <div class="layout">
+        <div class="form-section">
+            <!-- Display Django Messages -->
+            {% if messages %}
                 {% for message in messages %}
-                    <div style="padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center; font-weight: 600;
+                    <div style="padding: 15px; border-radius: 16px; margin-bottom: 25px; text-align: center; font-weight: 600;
                         {% if message.tags == 'error' %} background: #fee2e2; color: #991b1b; border: 1px solid #f87171;
                         {% elif message.tags == 'success' %} background: #dcfce7; color: #166534; border: 1px solid #4ade80;
                         {% else %} background: #fef9c3; color: #854d0e; border: 1px solid #facc15; {% endif %}">
                         {{ message }}
                     </div>
                 {% endfor %}
-            </div>
-        {% endif %}
+            {% endif %}
 
-        <div class="form-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin: 0;">Your Information</h2>
-                <label class="btn" style="background: #8b5cf6; margin: 0; cursor: pointer; font-size: 13px;">
-                    🤖 Import from PDF (AI Scan)
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h1 style="font-size: 36px;">Create Your CV</h1>
+                <label class="btn-premium ai-glow" style="cursor: pointer; font-size: 14px; padding: 10px 20px;">
+                    🤖 AI PDF Import
                     <input type="file" id="aiImport" accept=".pdf" style="display: none;" onchange="importAI(this)">
                 </label>
             </div>
+
             <form id="cvForm">
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="fullName" oninput="updatePreview()">
-                </div>
-                <div class="form-group">
-                    <label>Profile Photo</label>
-                    <p style="font-size: 12px; color: #64748b;">(Upload your photo on the <b>Dashboard</b> after saving)</p>
-                </div>
-                <div class="form-group">
-                    <label>Professional Title</label>
-                    <input type="text" id="professionalTitle" oninput="updatePreview()">
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="email" oninput="updatePreview()">
-                </div>
-                <div class="form-group">
-                    <label>Phone</label>
-                    <input type="tel" id="phone" oninput="updatePreview()">
-                </div>
-                <div class="form-group">
-                    <label>LinkedIn / Portfolio Link (for QR Code)</label>
-                    <input type="url" id="linkedinUrl" placeholder="https://linkedin.com/in/..." oninput="updatePreview()">
-                </div>
-                <div class="form-group">
-                    <label>Summary</label>
-                    <textarea id="summary" rows="3" oninput="updatePreview()"></textarea>
+                <!-- Step 1: Personal Info -->
+                <div class="step-card fade-in">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <h3 style="margin:0;">Personal Details</h3>
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="fullName" placeholder="John Doe" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Professional Title</label>
+                        <input type="text" id="professionalTitle" placeholder="Senior Software Engineer" oninput="updatePreview()">
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="email" placeholder="john@example.com" oninput="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="phone" placeholder="+33 6 12 34 56 78" oninput="updatePreview()">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>LinkedIn / Portfolio URL</label>
+                        <input type="url" id="linkedinUrl" placeholder="https://linkedin.com/in/johndoe" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Professional Summary</label>
+                        <textarea id="summary" rows="4" placeholder="Briefly describe your expertise and career goals..." oninput="updatePreview()"></textarea>
+                    </div>
                 </div>
 
-                <h3>Work Experience</h3>
-                <div id="expContainer"></div>
-                <button type="button" onclick="addExp()">+ Add Experience</button>
+                <!-- Step 2: Experience -->
+                <div class="step-card fade-in" style="animation-delay: 0.2s;">
+                    <div class="step-header">
+                        <div class="step-number">2</div>
+                        <h3 style="margin:0;">Work Experience</h3>
+                    </div>
+                    <div id="expContainer"></div>
+                    <button type="button" class="btn-add" onclick="addExp()">+ Add Role</button>
+                </div>
 
-                <h3>Education</h3>
-                <div id="eduContainer"></div>
-                <button type="button" onclick="addEdu()">+ Add Education</button>
+                <!-- Step 3: Education -->
+                <div class="step-card fade-in" style="animation-delay: 0.3s;">
+                    <div class="step-header">
+                        <div class="step-number">3</div>
+                        <h3 style="margin:0;">Education</h3>
+                    </div>
+                    <div id="eduContainer"></div>
+                    <button type="button" class="btn-add" onclick="addEdu()">+ Add Education</button>
+                </div>
 
-                <h3>Skills</h3>
-                <div id="skillContainer"></div>
-                <button type="button" onclick="addSkill()">+ Add Skill</button>
+                <!-- Step 4: Skills -->
+                <div class="step-card fade-in" style="animation-delay: 0.4s;">
+                    <div class="step-header">
+                        <div class="step-number">4</div>
+                        <h3 style="margin:0;">Key Skills</h3>
+                    </div>
+                    <div id="skillContainer"></div>
+                    <button type="button" class="btn-add" onclick="addSkill()">+ Add Skill</button>
+                </div>
 
-                <div style="margin-top: 30px;">
-                    <button type="button" onclick="saveCV()" style="background: #10b981;">💾 Save CV</button>
-                    <button type="button" onclick="location.reload()" style="background: #94a3b8;">Clear All</button>
+                <div style="margin-top: 40px; display: flex; gap: 15px; padding-bottom: 50px;">
+                    <button type="button" onclick="saveCV()" class="btn-premium" style="flex: 2; justify-content: center; font-size: 18px;">💾 Save & Finish CV</button>
+                    <button type="button" onclick="location.reload()" class="btn-premium" style="flex: 1; background: #94a3b8; box-shadow: none; justify-content: center;">Reset</button>
                 </div>
             </form>
         </div>
 
         <div class="preview-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin: 0;">Live Preview</h2>
-                <a href="{% url 'template_selector' %}" style="color: #667eea; font-weight: bold; text-decoration: none;">🎨 Change Template</a>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2 style="margin: 0; font-size: 20px;">✨ Live Preview</h2>
+                <a href="{% url 'template_selector' %}" style="color: var(--primary); font-weight: 700; text-decoration: none; font-size: 14px;">🎨 Change Template</a>
             </div>
-            <div id="livePreview" class="preview-card"></div>
+            <div class="preview-container">
+                <div id="livePreview" class="preview-card"></div>
+            </div>
         </div>
     </div>
 
@@ -285,6 +427,7 @@
 
         async function saveCV() {
             const data = {
+                cv_id: urlParams.get('edit'),
                 personalInfo: {
                     name: document.getElementById('fullName').value,
                     email: document.getElementById('email').value,
@@ -380,7 +523,67 @@
             });
         }
 
-        addExp(); addEdu(); addSkill(); updatePreview();
+        const editId = urlParams.get('edit');
+        if (editId) {
+            fetch(`/api/get-cv/${editId}/`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        addExp(); addEdu(); addSkill(); updatePreview();
+                        return;
+                    }
+                    if (data.template) template = data.template;
+                    
+                    document.getElementById('fullName').value = data.personalInfo.name || '';
+                    document.getElementById('email').value = data.personalInfo.email || '';
+                    document.getElementById('phone').value = data.personalInfo.phone || '';
+                    document.getElementById('professionalTitle').value = data.personalInfo.title || '';
+                    document.getElementById('summary').value = data.personalInfo.summary || '';
+                    document.getElementById('linkedinUrl').value = data.personalInfo.linkedin || '';
+
+                    if (data.experiences && data.experiences.length > 0) {
+                        data.experiences.forEach(exp => {
+                            addExp();
+                            const cards = document.getElementById('expContainer').getElementsByClassName('item-card');
+                            const lastCard = cards[cards.length - 1];
+                            lastCard.querySelector('.exp-pos').value = exp.position || '';
+                            lastCard.querySelector('.exp-com').value = exp.company || '';
+                            lastCard.querySelector('.exp-dur').value = exp.duration || '';
+                            lastCard.querySelector('.exp-desc').value = exp.description || '';
+                        });
+                    } else addExp();
+
+                    if (data.education && data.education.length > 0) {
+                        data.education.forEach(edu => {
+                            addEdu();
+                            const cards = document.getElementById('eduContainer').getElementsByClassName('item-card');
+                            const lastCard = cards[cards.length - 1];
+                            lastCard.querySelector('.edu-deg').value = edu.degree || '';
+                            lastCard.querySelector('.edu-ins').value = edu.institution || '';
+                            lastCard.querySelector('.edu-year').value = edu.year || '';
+                        });
+                    } else addEdu();
+
+                    if (data.skills && data.skills.length > 0) {
+                        data.skills.forEach(s => {
+                            addSkill();
+                            const cards = document.getElementById('skillContainer').getElementsByClassName('item-card');
+                            const lastCard = cards[cards.length - 1];
+                            lastCard.querySelector('.skill-name').value = s.name || '';
+                            lastCard.querySelector('.skill-level').value = s.level || 'Intermediate';
+                        });
+                    } else addSkill();
+
+                    updatePreview();
+                })
+                .catch(err => {
+                    console.error(err);
+                    addExp(); addEdu(); addSkill(); updatePreview();
+                });
+        } else {
+            addExp(); addEdu(); addSkill(); updatePreview();
+        }
 
         // Keyboard Shortcut for Template Cycling
         document.addEventListener('keydown', function(e) {

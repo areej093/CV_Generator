@@ -1,413 +1,248 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - CV Generator</title>
+    <title>Student Dashboard - CV Navigator</title>
+    <link rel="stylesheet" href="{% static 'main/css/premium.css' %}">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #f5f5f5;
-        }
-        
-        .navbar {
-            background: white;
-            padding: 15px 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .nav-brand {
-            font-size: 20px;
-            font-weight: bold;
-            color: #667eea;
-        }
-        
-        .nav-menu {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        
-        .nav-menu a {
-            color: #333;
-            text-decoration: none;
-        }
-        
-        .nav-menu a:hover {
-            color: #667eea;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-        
-        .welcome-card {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-        
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-        
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            background: #667eea;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-        }
-        
-        .btn:hover {
-            background: #5a67d8;
-        }
-        
-        .cv-grid {
+        .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 30px;
         }
-        
-        .cv-card {
+
+        .cv-card-premium {
             background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: relative;
-        }
-        
-        .cv-card h3 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 20px;
-        }
-        
-        .cv-card .title {
-            color: #667eea;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .cv-card .email {
-            color: #666;
-            margin-bottom: 15px;
-        }
-        
-        .cv-card .date {
-            color: #999;
-            font-size: 12px;
-            margin-bottom: 15px;
-        }
-        
-        .cv-actions {
+            border-radius: 24px;
+            padding: 25px;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
             display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
+            flex-direction: column;
+            gap: 15px;
         }
-        
-        .cv-actions button {
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-size: 14px;
+
+        .cv-card-premium:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .cv-icon {
+            width: 48px;
+            height: 48px;
+            background: #eef2ff;
+            color: var(--primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .action-btn {
+            padding: 10px;
+            border-radius: 10px;
             border: none;
             cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
             flex: 1;
-        }
-        
-        .btn-edit {
-            background: #28a745;
-            color: white;
-        }
-        
-        .btn-pdf {
-            background: #ffc107;
-            color: #333;
-        }
-        
-        .btn-delete {
-            background: #dc3545;
-            color: white;
-        }
-        
-        .empty-state {
+            transition: var(--transition);
             text-align: center;
-            padding: 60px;
+            text-decoration: none;
+        }
+
+        .btn-edit { background: #dcfce7; color: #166534; }
+        .btn-pdf { background: #fef9c3; color: #854d0e; }
+        .btn-del { background: #fee2e2; color: #991b1b; }
+
+        .sidebar-card {
             background: white;
-            border-radius: 10px;
+            border-radius: 24px;
+            padding: 25px;
+            border: 1px solid var(--border-light);
+            margin-bottom: 25px;
         }
-        .message-item {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            transition: background 0.3s;
-        }
-        .message-unread {
-            background: #f0fdf4;
+
+        @media (max-width: 1024px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-brand"><a href="{% url 'home' %}" style="text-decoration: none; color: inherit;">📄 CV Generator</a></div>
-        <div class="nav-menu">
-            <span>Welcome, {{ user.first_name|default:user.username }}!</span>
-            <a href="{% url 'browse_jobs' %}">Browse Jobs</a>
-            <a href="{% url 'browse_trainings' %}">Training Courses</a>
-            <a href="{% url 'cv_builder' %}">Create CV</a>
-            <a href="{% url 'logout' %}">Logout</a>
+    <nav class="glass-nav">
+        <a href="{% url 'home' %}" class="sidebar-brand" style="text-decoration: none; margin: 0;">CV Navigator</a>
+        <div style="display: flex; gap: 25px; align-items: center;">
+            <a href="{% url 'browse_jobs' %}" style="text-decoration: none; color: var(--text-body); font-weight: 600;">Jobs</a>
+            <a href="{% url 'browse_trainings' %}" style="text-decoration: none; color: var(--text-body); font-weight: 600;">Trainings</a>
+            <a href="{% url 'cv_builder' %}" class="btn-premium" style="padding: 8px 20px; font-size: 14px;">+ Create CV</a>
+            <a href="{% url 'logout' %}" style="color: #fb7185; text-decoration: none; font-weight: 600;">Logout</a>
         </div>
     </nav>
     
-    <div class="container">
-        <!-- Display Django Messages -->
-        {% if messages %}
-            {% for message in messages %}
-                <div style="padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; 
-                    {% if message.tags == 'error' %} background: #fee2e2; color: #991b1b; border: 1px solid #f87171;
-                    {% elif message.tags == 'success' %} background: #dcfce7; color: #166534; border: 1px solid #4ade80;
-                    {% else %} background: #fef9c3; color: #854d0e; border: 1px solid #facc15; {% endif %}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-
-        <div class="welcome-card">
-            <h1>Welcome to Your Dashboard, {{ user.first_name|default:user.username }}! 👋</h1>
-            <p>Manage your CVs or explore new opportunities.</p>
-            <div style="display: flex; gap: 15px; margin-top: 20px;">
-                <a href="{% url 'cv_builder' %}" class="btn">+ Create New CV</a>
-                <a href="{% url 'browse_jobs' %}" class="btn" style="background: #48bb78;">🚀 Job Opportunities</a>
-                <button onclick="document.getElementById('profile-modal').style.display='block'" class="btn" style="background: #718096;">⚙️ Edit Profile</button>
-            </div>
-        </div>
-
-        <!-- Profile Modal -->
-        <div id="profile-modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5);">
-            <div style="background:white; margin:10% auto; padding:30px; width:400px; border-radius:15px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
-                <h2>Edit Your Profile</h2>
-                <form action="{% url 'update_profile' %}" method="POST">
-                    {% csrf_token %}
-                    <div style="margin-bottom:15px;">
-                        <label style="display:block; margin-bottom:5px;">First Name</label>
-                        <input type="text" name="first_name" value="{{ user.first_name }}" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+    <div class="dashboard-grid">
+        <main class="main-content">
+            <!-- Display Django Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div style="padding: 15px; border-radius: 16px; margin-bottom: 25px; text-align: center; font-weight: 600;
+                        {% if message.tags == 'error' %} background: #fee2e2; color: #991b1b; border: 1px solid #f87171;
+                        {% elif message.tags == 'success' %} background: #dcfce7; color: #166534; border: 1px solid #4ade80;
+                        {% else %} background: #fef9c3; color: #854d0e; border: 1px solid #facc15; {% endif %}">
+                        {{ message }}
                     </div>
-                    <div style="margin-bottom:15px;">
-                        <label style="display:block; margin-bottom:5px;">Last Name</label>
-                        <input type="text" name="last_name" value="{{ user.last_name }}" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
-                    </div>
-                    <div style="margin-bottom:15px;">
-                        <label style="display:block; margin-bottom:5px;">Professional Bio</label>
-                        <textarea name="bio" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">{{ user.profile.bio }}</textarea>
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <button type="submit" class="btn">Save Changes</button>
-                        <button type="button" onclick="document.getElementById('profile-modal').style.display='none'" class="btn" style="background:#eee; color:#333;">Cancel</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        {% if notifications %}
-        <div class="welcome-card" style="border-left: 5px solid #6366f1;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h2 style="margin: 0; font-size: 1.2rem;">🔔 Recent Notifications</h2>
-                <a href="{% url 'mark_all_notifications_read' %}" style="font-size: 0.8rem; color: #6366f1; text-decoration: none; font-weight: bold;">Mark all as read</a>
-            </div>
-            {% for note in notifications %}
-            <div id="note-{{ note.id }}" style="padding: 10px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <strong>{{ note.title }}</strong>: {{ note.message }}
-                    <div style="font-size: 0.8rem; color: #94a3b8;">{{ note.created_at|timesince }} ago</div>
-                </div>
-                <button onclick="markRead({{ note.id }})" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.2rem;" title="Dismiss">&times;</button>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        {% if conversations %}
-        <div class="welcome-card" style="border-left: 5px solid #10b981;">
-            <h2 style="margin-top: 0; font-size: 1.2rem;">💬 Conversations</h2>
-            {% for conv in conversations %}
-            <div class="message-item {% if conv.unread_count > 0 %}message-unread{% endif %}" style="cursor: pointer;" onclick="toggleChat({{ conv.user.id }})">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                    <strong style="color: #065f46;">
-                        {{ conv.user.first_name|default:conv.user.username }}
-                        {% if conv.unread_count > 0 %}
-                        <span style="background: #ef4444; color: white; border-radius: 10px; padding: 2px 8px; font-size: 0.7rem; margin-left: 5px;">{{ conv.unread_count }}</span>
-                        {% endif %}
-                    </strong>
-                    <span style="font-size: 0.8rem; color: #94a3b8;">{{ conv.last_message.created_at|date:"M d" }}</span>
-                </div>
-                <p style="color: #475569; margin: 0; line-height: 1.5; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    {% if conv.last_message.sender == user %}You: {% endif %}{{ conv.last_message.content }}
-                </p>
-            </div>
-
-            <!-- Chat History for this conversation (Hidden by default) -->
-            <div id="chat-{{ conv.user.id }}" style="display:none; background: #f8fafc; padding: 15px; border-radius: 8px; margin-top: -10px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
-                <div style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column-reverse;">
-                    {% for msg in conv.messages %}
-                    <div style="margin-bottom: 10px; max-width: 80%; {% if msg.sender == user %}align-self: flex-end; text-align: right;{% else %}align-self: flex-start;{% endif %}">
-                        <div style="display: inline-block; padding: 8px 12px; border-radius: 12px; font-size: 0.85rem; {% if msg.sender == user %}background: #6366f1; color: white;{% else %}background: white; border: 1px solid #e2e8f0;{% endif %}">
-                            {{ msg.content }}
-                        </div>
-                        <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">{{ msg.created_at|date:"H:i" }}</div>
-                    </div>
-                    {% endfor %}
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="openReplyModal('{{ conv.user.id }}', '{{ conv.user.first_name|default:conv.user.username|escapejs }}')" style="background: #10b981; color: white; border: none; padding: 5px 12px; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Reply</button>
-                    {% if conv.unread_count > 0 %}
-                    <button onclick="markConvRead({{ conv.user.id }})" style="background: none; border: none; color: #6366f1; font-size: 0.8rem; cursor: pointer; text-decoration: underline;">Mark as Read</button>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <script>
-        function toggleChat(userId) {
-            const chat = document.getElementById(`chat-${userId}`);
-            if (chat.style.display === 'none') {
-                chat.style.display = 'block';
-            } else {
-                chat.style.display = 'none';
-            }
-        }
-
-        function markConvRead(userId) {
-            // We'll need a new view for this or reuse mark_message_read logic
-            fetch(`/messages/read-conv/${userId}/`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) window.location.reload();
-                });
-        }
-        </script>
-        {% endif %}
-
-        {% if applications %}
-        <div class="welcome-card">
-            <h2>📝 Your Active Applications</h2>
-            <div class="cv-grid" style="grid-template-columns: 1fr;">
-                {% for app in applications %}
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 10px;">
-                    <div>
-                        <strong style="font-size: 1.1rem;">{{ app.job_offer.title }}</strong>
-                        <div style="color: #64748b;">{{ app.job_offer.company.name }} • Applied on {{ app.applied_at|date:"M d, Y" }}</div>
-                    </div>
-                    <div>
-                        <span style="padding: 8px 16px; border-radius: 30px; font-weight: 700; font-size: 0.9rem; 
-                            {% if app.status == 'pending' %} background: #fef3c7; color: #92400e;
-                            {% elif app.status == 'accepted' %} background: #dcfce7; color: #166534;
-                            {% elif app.status == 'rejected' %} background: #fee2e2; color: #991b1b;
-                            {% endif %}">
-                            {{ app.get_status_display }}
-                        </span>
-                    </div>
-                </div>
                 {% endfor %}
-            </div>
-        </div>
-        {% endif %}
+            {% endif %}
 
-        {% if recommended_trainings %}
-        <div class="welcome-card" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd;">
-            <h2 style="color: #0369a1; margin-top: 0;">✨ AI-Recommended Courses for You</h2>
-            <p style="color: #0c4a6e;">Boost your profile with these curated trainings based on your CV:</p>
-            <div class="cv-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
-                {% for course in recommended_trainings %}
-                <div style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
-                    <h3 style="margin: 0 0 10px 0; font-size: 1.1rem; color: #0c4a6e;">{{ course.title }}</h3>
-                    <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 15px;">{{ course.provider_name }}</p>
-                    <a href="{{ course.link }}" class="btn" style="width: 100%; text-align: center; background: #0284c7; padding: 10px;">View Course</a>
+            <div class="premium-card" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: white; margin-bottom: 40px;">
+                <h1 style="color: white; font-size: 32px; margin-bottom: 10px;">Welcome back, {{ user.first_name|default:user.username }}! 👋</h1>
+                <p style="color: #94a3b8; font-size: 16px;">You have {{ cvs|length }} active CVs and {{ applications|length }} pending applications.</p>
+                <div style="display: flex; gap: 15px; margin-top: 25px;">
+                    <a href="{% url 'cv_builder' %}" class="btn-premium">Create New CV</a>
+                    <button onclick="document.getElementById('profile-modal').style.display='block'" class="btn-premium" style="background: rgba(255,255,255,0.1); box-shadow: none;">Edit Profile</button>
                 </div>
-                {% endfor %}
             </div>
-        </div>
-        {% endif %}
-        
-        <h2>Your CVs ({{ cvs|length }})</h2>
-        
-        {% if cvs %}
-            <div class="cv-grid">
+
+            <h2 style="margin-bottom: 25px;">My CVs</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
                 {% for cv in cvs %}
-                    <div class="cv-card" data-cv-id="{{ cv.id }}">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <div style="display: flex; align-items: center; gap: 15px;">
-                                {% if cv.profile_image %}
-                                    <img src="{{ cv.profile_image.url }}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #667eea;">
-                                {% else %}
-                                    <div style="width: 50px; height: 50px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 20px;">👤</div>
-                                {% endif %}
-                                <div>
-                                    <h3 style="margin: 0; font-size: 1.1rem;">{{ cv.full_name }}</h3>
-                                    <span style="font-size: 12px; color: #94a3b8;">{{ cv.get_template_display }}</span>
-                                </div>
-                            </div>
-                            <span style="font-size: 20px;">
-                                {% if cv.template == 'modern' %}✨
-                                {% elif cv.template == 'classic' %}📋
-                                {% elif cv.template == 'creative' %}🎨
-                                {% elif cv.template == 'minimal' %}⚡
-                                {% endif %}
-                            </span>
-                        </div>
-                        <div class="title">{{ cv.professional_title|default:"Professional" }}</div>
-                        <div class="email">{{ cv.email }}</div>
-                        <div class="date">Created: {{ cv.created_at|date:"F j, Y" }}</div>
-                        <div style="margin: 15px 0;">
-                            <form action="{% url 'upload_cv_image' cv.id %}" method="POST" enctype="multipart/form-data" style="display: flex; gap: 10px; align-items: center;">
-                                {% csrf_token %}
-                                <label class="btn" style="padding: 5px 10px; font-size: 12px; background: #edf2f7; color: #4a5568; margin: 0; cursor: pointer;">
-                                    📸 {% if cv.profile_image %}Change{% else %}Upload{% endif %}
-                                    <input type="file" name="profile_image" onchange="this.form.submit()" style="display: none;">
-                                </label>
-                                {% if cv.profile_image %}
-                                <a href="{% url 'upload_cv_image' cv.id %}?delete=1" style="font-size: 12px; color: #e53e3e; text-decoration: none;" onclick="return confirm('Delete image?')">🗑️</a>
-                                {% endif %}
-                            </form>
-                        </div>
-                        <div class="cv-actions">
-                            <button class="btn-edit edit-cv">✏️ Edit</button>
-                            <button class="btn-pdf download-pdf">📄 PDF</button>
-                            <a href="{% url 'ai_dashboard' cv.id %}" class="btn" style="padding: 8px 16px; margin:0; flex:1; text-align:center; background:#17a2b8; text-decoration:none; display:flex; justify-content:center; align-items:center;">🤖 AI Match</a>
-                            <button class="btn-delete delete-cv">🗑️ Delete</button>
+                <div class="cv-card-premium fade-in" style="animation-delay: {{ forloop.counter0 }}00ms;">
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <div class="cv-icon">📄</div>
+                        <div style="flex: 1;">
+                            <h3 style="margin:0; font-size: 18px;">{{ cv.full_name }}</h3>
+                            <p style="color: var(--primary); font-weight: 700; font-size: 13px;">{{ cv.professional_title }}</p>
+                            <p style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">Updated {{ cv.updated_at|timesince }} ago</p>
                         </div>
                     </div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                        <a href="{% url 'cv_builder' %}?edit={{ cv.id }}" class="action-btn btn-edit">Edit</a>
+                        <a href="{% url 'download_pdf' cv.id %}" class="action-btn btn-pdf">PDF</a>
+                        <button onclick="deleteCV({{ cv.id }})" class="action-btn btn-del">Delete</button>
+                        <a href="{% url 'ai_dashboard' cv.id %}" class="action-btn" style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white; flex: 100%; text-align: center; margin-top: 5px;">🧠 AI Insights & NLP Analysis</a>
+                        <form action="{% url 'upload_cv_image' cv.id %}" method="POST" enctype="multipart/form-data" style="display:inline; flex:1; margin:0;">
+                            {% csrf_token %}
+                            <label class="action-btn" style="cursor: pointer; display: block; background: #e0f2fe; color: #0284c7; text-align: center; border-radius: 10px; padding: 10px; margin:0;">
+                                Photo
+                                <input type="file" name="profile_image" onchange="this.form.submit()" style="display:none;" accept="image/*">
+                            </label>
+                        </form>
+                        {% if cv.profile_image %}
+                        <a href="{% url 'upload_cv_image' cv.id %}?delete=1" class="action-btn" style="background:#f3f4f6; color:#4b5563; flex:1; text-align: center;">Del Photo</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="premium-card" style="grid-column: 1 / -1; text-align: center; padding: 60px;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">📝</div>
+                    <h3>No CVs yet</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 25px;">Create your first professional CV using our AI-powered builder.</p>
+                    <a href="{% url 'cv_builder' %}" class="btn-premium">Start Building</a>
+                </div>
                 {% endfor %}
             </div>
-        {% else %}
-            <div class="empty-state">
-                <p>You haven't created any CVs yet.</p>
-                <a href="{% url 'cv_builder' %}" class="btn">Create Your First CV</a>
+        </main>
+
+        <aside class="sidebar-section">
+            {% if notifications %}
+            <div class="sidebar-card" style="border-left: 4px solid var(--primary);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; font-size: 16px;">Notifications</h3>
+                    <a href="{% url 'mark_all_notifications_read' %}" style="font-size: 12px; color: var(--primary); text-decoration: none;">Clear</a>
+                </div>
+                {% for note in notifications %}
+                <div id="note-{{ note.id }}" style="padding: 12px 0; border-bottom: 1px solid #f1f5f9; position: relative;">
+                    <p style="font-size: 13px; font-weight: 600; margin-bottom: 2px;">{{ note.title }}</p>
+                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">{{ note.message }}</p>
+                    <button onclick="markRead({{ note.id }})" style="position: absolute; top: 10px; right: 0; background: none; border: none; color: #cbd5e1; cursor: pointer;">&times;</button>
+                </div>
+                {% endfor %}
             </div>
-        {% endif %}
+            {% endif %}
+
+            {% if conversations %}
+            <div class="sidebar-card" style="border-left: 4px solid var(--success);">
+                <h3 style="margin: 0 0 20px; font-size: 16px;">Messages</h3>
+                {% for conv in conversations %}
+                <div style="padding: 12px 0; border-bottom: 1px solid #f1f5f9; cursor: pointer;" onclick="toggleChat({{ conv.user.id }})">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-size: 13px; font-weight: 700;">{{ conv.user.first_name|default:conv.user.username }}</span>
+                        {% if conv.unread_count > 0 %}
+                        <span style="background: var(--accent); color: white; border-radius: 10px; padding: 2px 6px; font-size: 10px;">{{ conv.unread_count }}</span>
+                        {% endif %}
+                    </div>
+                    <p style="font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        {{ conv.last_message.content }}
+                    </p>
+                </div>
+
+                <div id="chat-{{ conv.user.id }}" style="display:none; background: #f8fafc; padding: 15px; border-radius: 12px; margin-top: 10px; border: 1px solid #e2e8f0;">
+                    <div style="max-height: 150px; overflow-y: auto; margin-bottom: 12px; display: flex; flex-direction: column-reverse;">
+                        {% for msg in conv.messages %}
+                        <div style="margin-bottom: 8px; max-width: 90%; {% if msg.sender == user %}align-self: flex-end; text-align: right;{% else %}align-self: flex-start;{% endif %}">
+                            <div style="display: inline-block; padding: 6px 10px; border-radius: 10px; font-size: 11px; {% if msg.sender == user %}background: var(--primary); color: white;{% else %}background: white; border: 1px solid #e2e8f0;{% endif %}">
+                                {{ msg.content }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button onclick="openReplyModal('{{ conv.user.id }}', '{{ conv.user.first_name|default:conv.user.username|escapejs }}')" class="btn-premium" style="width: 100%; padding: 8px; font-size: 12px; justify-content: center;">Reply</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </aside>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profile-modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5);">
+        <div class="premium-card" style="margin:10% auto; width:400px; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);">
+            <h2 style="margin-top: 0;">Edit Your Profile</h2>
+            <form action="{% url 'update_profile' %}" method="POST">
+                {% csrf_token %}
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:5px; font-weight: 600;">First Name</label>
+                    <input type="text" name="first_name" value="{{ user.first_name }}" style="width:100%; padding:10px; border:1px solid var(--border-light); border-radius:8px;">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:5px; font-weight: 600;">Last Name</label>
+                    <input type="text" name="last_name" value="{{ user.last_name }}" style="width:100%; padding:10px; border:1px solid var(--border-light); border-radius:8px;">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:5px; font-weight: 600;">Professional Bio</label>
+                    <textarea name="bio" style="width:100%; padding:10px; border:1px solid var(--border-light); border-radius:8px; height: 80px;">{{ user.profile.bio }}</textarea>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button type="submit" class="btn-premium">Save Changes</button>
+                    <button type="button" onclick="document.getElementById('profile-modal').style.display='none'" class="btn-premium" style="background:#f1f5f9; color:var(--text-body); box-shadow: none;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reply Modal -->
+    <div id="reply-modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5);">
+        <div class="premium-card" style="margin:10% auto; width:450px; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);">
+            <h2 id="reply-title" style="margin-top: 0;">Reply</h2>
+            <form action="" id="reply-form" method="POST">
+                {% csrf_token %}
+                <textarea name="content" placeholder="Type your message..." style="width:100%; height:120px; padding:10px; border:1px solid var(--border-light); border-radius:8px; margin-bottom:15px; font-family: inherit;"></textarea>
+                <div style="display:flex; gap:10px;">
+                    <button type="submit" class="btn-premium">Send Reply 🚀</button>
+                    <button type="button" onclick="document.getElementById('reply-modal').style.display='none'" class="btn-premium" style="background:#f1f5f9; color:var(--text-body); box-shadow: none;">Cancel</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
         (function() {
-            // ==================== NOTIFICATIONS & MESSAGES ====================
             window.markRead = function(noteId) {
                 fetch(`/notifications/read/${noteId}/`)
                     .then(response => response.json())
@@ -426,12 +261,9 @@
                     });
             };
 
-            window.markMsgRead = function(msgId) {
-                fetch(`/messages/read/${msgId}/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) window.location.reload();
-                    });
+            window.toggleChat = function(userId) {
+                const chat = document.getElementById(`chat-${userId}`);
+                chat.style.display = chat.style.display === 'none' ? 'block' : 'none';
             };
 
             window.openReplyModal = function(userId, username) {
@@ -443,144 +275,21 @@
                 if (modal) modal.style.display = 'block';
             };
 
-            // ==================== INITIALIZATION ====================
-            document.addEventListener('DOMContentLoaded', function() {
-                // Add event listeners to all edit buttons
-                document.querySelectorAll('.edit-cv').forEach(button => {
-                    button.addEventListener('click', function(e) {
-                        const cvCard = e.target.closest('.cv-card');
-                        const cvId = cvCard.dataset.cvId;
-                        window.location.href = "{% url 'home' %}?edit=" + cvId;
-                    });
-                });
-                
-                // Add event listeners to all PDF buttons
-                document.querySelectorAll('.download-pdf').forEach(button => {
-                    button.addEventListener('click', function(e) {
-                        const cvCard = e.target.closest('.cv-card');
-                        const cvId = cvCard.dataset.cvId;
-                        downloadPDF(cvId);
-                    });
-                });
-                
-                // Add event listeners to all delete buttons
-                document.querySelectorAll('.delete-cv').forEach(button => {
-                    button.addEventListener('click', function(e) {
-                        const cvCard = e.target.closest('.cv-card');
-                        const cvId = cvCard.dataset.cvId;
-                        deleteCV(cvId);
-                    });
-                });
-            });
-            
-            // ==================== DELETE CV FUNCTION ====================
-            function deleteCV(cvId) {
+            window.deleteCV = function(cvId) {
                 if (confirm('Are you sure you want to delete this CV?')) {
                     fetch(`/api/delete-cv/${cvId}/`, {
                         method: 'DELETE',
                         headers: {
-                            'X-CSRFToken': getCookie('csrftoken')
+                            'X-CSRFToken': '{{ csrf_token }}'
                         }
                     })
                     .then(response => response.json())
                     .then(data => {
-                        if (data.success) {
-                            // Remove the CV card from the page
-                            const cvCard = document.querySelector(`[data-cv-id="${cvId}"]`);
-                            if (cvCard) {
-                                cvCard.remove();
-                            }
-                            
-                            // Update the count
-                            updateCVCount();
-                            
-                            // Show success message
-                            showNotification('CV deleted successfully!');
-                        } else {
-                            alert('Error: ' + data.error);
-                        }
-                    })
-                    .catch(error => {
-                        alert('Error: ' + error);
+                        if (data.success) window.location.reload();
+                        else alert('Error: ' + data.error);
                     });
                 }
-            }
-            
-            // ==================== DOWNLOAD PDF FUNCTION ====================
-            function downloadPDF(cvId) {
-                window.location.href = `/api/download-pdf/${cvId}/`;
-            }
-            
-            // ==================== UPDATE CV COUNT ====================
-            function updateCVCount() {
-                const cvCount = document.querySelectorAll('.cv-card').length;
-                const countElement = document.querySelector('h2');
-                if (countElement) {
-                    countElement.textContent = `Your CVs (${cvCount})`;
-                }
-                
-                // Show empty state if no CVs
-                if (cvCount === 0) {
-                    const container = document.querySelector('.container');
-                    const cvGrid = document.querySelector('.cv-grid');
-                    if (cvGrid) {
-                        cvGrid.remove();
-                        
-                        const emptyState = document.createElement('div');
-                        emptyState.className = 'empty-state';
-                        emptyState.innerHTML = `
-                            <p>You haven't created any CVs yet.</p>
-                            <a href="/" class="btn">Create Your First CV</a>
-                        `;
-                        container.appendChild(emptyState);
-                    }
-                }
-            }
-            
-            // ==================== NOTIFICATION FUNCTION ====================
-            function showNotification(message) {
-                // Create notification element if it doesn't exist
-                let notification = document.getElementById('notification');
-                if (!notification) {
-                    notification = document.createElement('div');
-                    notification.id = 'notification';
-                    notification.style.cssText = `
-                        position: fixed;
-                        top: 20px;
-                        right: 20px;
-                        padding: 15px;
-                        background: #28a745;
-                        color: white;
-                        border-radius: 4px;
-                        z-index: 1000;
-                        display: none;
-                    `;
-                    document.body.appendChild(notification);
-                }
-                
-                notification.textContent = message;
-                notification.style.display = 'block';
-                
-                setTimeout(() => {
-                    notification.style.display = 'none';
-                }, 3000);
-            }
-            
-            // ==================== GET COOKIE FUNCTION ====================
-            function getCookie(name) {
-                let cookieValue = null;
-                if (document.cookie && document.cookie !== '') {
-                    const cookies = document.cookie.split(';');
-                    for (let i = 0; i < cookies.length; i++) {
-                        const cookie = cookies[i].trim();
-                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                            break;
-                        }
-                    }
-                }
-                return cookieValue;
-            }
+            };
         })();
     </script>
 </body>

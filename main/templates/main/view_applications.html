@@ -170,20 +170,7 @@
                         </form>
                     </div>
 
-                    <!-- Message Modal -->
-                    <div id="messageModal-{{ app.cv.user.id }}" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5);">
-                        <div style="background:white; margin:10% auto; padding:30px; width:450px; border-radius:24px; box-shadow: var(--shadow-premium);">
-                            <h2 id="modalTitle-{{ app.cv.user.id }}" style="margin-top:0;">Send Message</h2>
-                            <form action="{% url 'send_message' app.cv.user.id %}" method="POST">
-                                {% csrf_token %}
-                                <textarea name="content" placeholder="Type your message here..." style="width:100%; height:150px; padding:15px; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:20px; font-family:inherit;"></textarea>
-                                <div style="display:flex; justify-content:flex-end; gap:10px;">
-                                    <button type="button" onclick="document.getElementById('messageModal-{{ app.cv.user.id }}').style.display='none'" class="btn-action" style="background:#f1f5f9; color:#475569;">Cancel</button>
-                                    <button type="submit" class="btn-action btn-hire">Send Message 🚀</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+
                 </div>
             </div>
         {% empty %}
@@ -194,10 +181,26 @@
             </div>
         {% endfor %}
     </div>
+    <!-- Global Message Modal -->
+    <div id="messageModal" style="display:none; position:fixed; z-index:10000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5);">
+        <div style="background:white; margin:10% auto; padding:30px; width:450px; border-radius:24px; box-shadow: var(--shadow-premium);">
+            <h2 id="modalTitle" style="margin-top:0;">Send Message</h2>
+            <form action="" id="messageForm" method="POST">
+                {% csrf_token %}
+                <textarea name="content" placeholder="Type your message here..." style="width:100%; height:150px; padding:15px; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:20px; font-family:inherit;"></textarea>
+                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button type="button" onclick="document.getElementById('messageModal').style.display='none'" class="btn-action" style="background:#f1f5f9; color:#475569;">Cancel</button>
+                    <button type="submit" class="btn-action btn-hire">Send Message 🚀</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         function openMessageModal(userId, fullName) {
-            document.getElementById('modalTitle-' + userId).innerText = 'Send Message to ' + fullName;
-            document.getElementById('messageModal-' + userId).style.display = 'block';
+            document.getElementById('modalTitle').innerText = 'Send Message to ' + fullName;
+            document.getElementById('messageForm').action = "{% url 'send_message' 0 %}".replace('0', userId);
+            document.getElementById('messageModal').style.display = 'block';
         }
     </script>
 </body>
